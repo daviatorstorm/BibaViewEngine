@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.IO;
+using System.Linq;
 
 namespace BibaViewEngine.Models
 {
@@ -33,9 +34,12 @@ namespace BibaViewEngine.Models
         public ComponentModule(Component component)
         {
             _component = component;
-            var test = component.GetType().GetTypeInfo().Assembly.Location;
+            var fileLocation = Directory.GetFiles("Client", "*.html", SearchOption.AllDirectories)
+                .Single(x => Path.GetFileNameWithoutExtension(x) == component.GetType().Name);
 
-            TemplateLocation = test;
+            var plainTemplate = File.ReadAllText(fileLocation);
+
+            _template = component.InnerCompile(plainTemplate);
         }
     }
 }
