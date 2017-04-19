@@ -1,22 +1,55 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using BibaViewEngine.Compiler;
+using BibaViewEngine.Interfaces;
+using BibaViewEngine.Middleware;
+using BibaViewEngine.Models;
+using BibaViewEngine.Router;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace BibaViewEngine
 {
     public static class EngineExtensions
     {
+        static BibaViewEngineProperties _props;
         public static IApplicationBuilder UseBibaViewEngine(this IApplicationBuilder app)
         {
             var builder = app;
 
+            app.UseMiddleware<BibaMiddleware>();
+
+            app.Map("/c", (subApp) =>
+            {
+                subApp.Run((constext) =>
+                {
+                    return Task.FromResult(constext);
+                });
+            });
+
             return builder;
         }
 
-        public static IServiceCollection AddBibaViewEngine(this IServiceCollection services)
+        public static IServiceCollection AddBibaViewEngine(this IServiceCollection services, BibaViewEngineProperties props = null)
         {
-            var myServices = services;
+            var ass = Assembly.GetEntryAssembly();
 
-            return myServices;
+            //var components = ass.GetTypes().AsQueryable().Where(x => x.GetTypeInfo().BaseType == typeof(Component));
+
+            if (props == null)
+            {
+                props = new BibaViewEngineProperties();
+            }
+
+            _props = props;
+
+            services.AddSingleton(props);
+            services.AddSingleton(ass);
+            services.AddTransient<IBibaRouter, BibaRouter>();
+
+            services.AddTransient<BibaCompiler>();
+
+            return services;
         }
     }
 }
