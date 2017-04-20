@@ -26,8 +26,6 @@ namespace BibaViewEngine.Middleware
         {
             var mainHtml = File.ReadAllText(_props.IndexHtml);
 
-            //var htmlBody = mainHtml.Substring(mainHtml.IndexOf("<app"), mainHtml.Length - mainHtml.LastIndexOf("</app>"));
-
             await context.Response.WriteAsync(await Task.Run(() =>
             {
                 return _compiler.StartCompile(mainHtml);

@@ -25,6 +25,8 @@ namespace ViewEngineEnvironment
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseStaticFiles();
+            
             app.UseBibaViewEngine();
         }
     }

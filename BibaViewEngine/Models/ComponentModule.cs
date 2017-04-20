@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace BibaViewEngine.Models
 {
+    // Hack: Maybe depracated
     public class ComponentModule
     {
         private readonly Component _component;
@@ -39,7 +40,7 @@ namespace BibaViewEngine.Models
 
             var plainTemplate = File.ReadAllText(fileLocation);
 
-            _template = component.InnerCompile(plainTemplate);
+            // _template = component.InnerCompile(HtmlElement);
         }
     }
 }

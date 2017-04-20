@@ -2,13 +2,29 @@
 using System;
 using BibaViewEngine.Compiler;
 using HtmlAgilityPack;
+using System.IO;
+using System.Linq;
 
 namespace BibaViewEngine
 {
     public class Component
     {
-        public BibaCompiler _compiler;
+        public Component()
+        {
+            try
+            {
+                var fileLocation = Directory.GetFiles("Client", "*.html", SearchOption.AllDirectories)
+                   .Single(x => Path.GetFileNameWithoutExtension(x) == GetType().Name);
 
+                Template = File.ReadAllText(fileLocation);
+            }
+            catch
+            {
+                Template = "";
+            }
+        }
+
+        public BibaCompiler _compiler;
         public string Name
         {
             get
@@ -17,8 +33,8 @@ namespace BibaViewEngine
                 return string.IsNullOrWhiteSpace(_name) ? _name : throw new Exception("Component must have name");
             }
         }
-
         public HtmlNode HtmlElement { get; internal set; }
+        public string Template { get; private set; }
 
         public delegate void CompileComplete(HtmlElement element);
         public delegate void CompileStart(HtmlElement element);
@@ -26,13 +42,11 @@ namespace BibaViewEngine
         public event CompileComplete OnCompileComplete;
         public event CompileStart OnCompileStart;
 
-        public string InnerCompile(string template)
+        public virtual void InnerCompile()
         {
-            foreach (var element in _compiler.ExtractNodes(HtmlElement))
-            {
-                _compiler.ExecuteCompiler(element);
-            }
-            return string.Empty;
+            HtmlElement.InnerHtml = Template;
+            var compiledTemplate = _compiler.Compile(HtmlElement, this);
+            _compiler.ExecuteCompiler(compiledTemplate, this);
         }
     }
 }
