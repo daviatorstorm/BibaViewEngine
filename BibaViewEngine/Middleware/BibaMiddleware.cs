@@ -30,7 +30,7 @@ namespace BibaViewEngine.Middleware
 
             await context.Response.WriteAsync(await Task.Run(() =>
             {
-                return _compiler.GlobalCompile(mainHtml);
+                return _compiler.StartCompile(mainHtml);
             }));
         }
     }

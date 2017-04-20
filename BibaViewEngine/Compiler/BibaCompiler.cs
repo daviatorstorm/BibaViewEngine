@@ -25,7 +25,7 @@ namespace BibaViewEngine.Compiler
             _doc = new HtmlDocument();
         }
 
-        public string GlobalCompile(string html)
+        public string StartCompile(string html)
         {
             _doc.LoadHtml(html);
 
