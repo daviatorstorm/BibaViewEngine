@@ -20,6 +20,7 @@ namespace BibaViewEngine.Compiler
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
         private readonly IEnumerable<Type> _registeredComponents;
+        private readonly Regex directive = new Regex("\\(\\[([\\w]+)\\]\\)");
 
         public BibaCompiler(Assembly ass, RegisteredComponentsCollection components)
         {
@@ -74,72 +75,83 @@ namespace BibaViewEngine.Compiler
             return componentInstance;
         }
 
-        public Component Compile(Component component, Component parent = null)
+        public Component Compile(Component child, Component parent = null)
         {
-            var htmlNode = component.HtmlElement;
-            var compiledAttributes = new List<string>();
             var evalParentProps = Enumerable.Empty<KeyValuePair<string, object>>();
 
             if (parent != null)
             {
-                // TODO: Finished here
-                evalParentProps = GetAttributesForComponent(component);
-                compiledAttributes.AddRange(evalParentProps.Select(x => x.Key));
+                evalParentProps = GetParentProps(parent);
             }
 
-            var componentAttributes = component.HtmlElement.Attributes
-                .Where(x => !compiledAttributes.Contains(x.Name.ToLower()))
+            var componentAttributes = child.HtmlElement.Attributes
                 .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
 
-            var connectableValues = component.GetType().GetProperties()
-                .Where(x => componentAttributes.Any(y => y.Key.ToLower() == x.Name.ToLower()) &&
-                        !evalParentProps.Any(y => y.Key == x.Name.ToLower())
-                );
+            var childProps = child.GetType().GetProperties();
 
-            foreach (var item in connectableValues)
+            if (evalParentProps.Count() > 0)
             {
-                var assignValue = componentAttributes.Single(x => x.Key.ToLower() == item.Name.ToLower()).Value;
-                item.SetValue(component, assignValue);
+                foreach (var attr in componentAttributes)
+                {
+                    var childProp = childProps.Single(x => x.Name.ToLower() == attr.Key.ToLower());
+                    var parentValue = evalParentProps.FirstOrDefault(x => !directive.Match(attr.Value.ToString()).Success &&
+                        x.Key.ToLower() == attr.Value.ToString().ToLower()).Value;
+
+                    if (parentValue == null)
+                    {
+                        childProp.SetValue(child, attr.Value);
+                    }
+                    else
+                    {
+                        childProp.SetValue(child, parentValue);
+                    }
+                }
             }
 
-            component.InnerCompile();
+            child.InnerCompile();
 
-            return component;
+            return child;
         }
 
-        public IEnumerable<KeyValuePair<string, object>> GetAttributesForComponent(Component component)
+        public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
         {
-            var attrs = component.HtmlElement.Attributes.Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
+            var props = parent.GetType().GetProperties()
+                .Where(x => !x.CustomAttributes.Any(y => y.AttributeType.Equals(typeof(IgnoreAttribute))))
+                .Select(x => new KeyValuePair<string, object>(x.Name.ToLower(), x.GetValue(parent)));
 
-            var props = component.GetType().GetProperties().Where(x =>
-                    attrs.Any(attr => attr.Key.ToLower() == x.Name.ToLower()) &&
-                        x.CustomAttributes.Any(y => y.AttributeType.Equals(typeof(InputAttribute)))
-                );
-
-            var evalProps = props.Select(x => new KeyValuePair<string, object>(x.Name.ToLower(), x.GetValue(x)));
-
-            return evalProps;
+            return props;
         }
 
         public HtmlNode Compile(HtmlNode node, object context)
         {
-            // TODO: Test this
-            var regex = new Regex("\\(\\[([\\w]+)\\]\\)");
-            var nodes = node.SelectNodes("//*[text()[contains(., '[(')]]") ?? new HtmlNodeCollection(node);
-
-            foreach (var innerNode in nodes)
+            // TODO: Test this shit
+            var newContext = context.ToDictionary();
+            var matches = directive.Matches(node.InnerHtml);
+            foreach (Match match in matches)
             {
-                var matches = regex.Matches(string.Empty);
-                foreach (Match match in matches)
-                {
-                    var itemName = match.Groups[1].Value;
-                    var matchValue = match.Value;
-                    var propValue = context.GetType().GetField(itemName).GetValue(context).ToString();
-                    innerNode.InnerHtml = innerNode.InnerHtml.Replace(matchValue, propValue);
-                }
+                var itemName = match.Groups[1].Value;
+                var matchValue = match.Value;
+                var propValue = newContext[itemName] as string;
+                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue);
             }
 
             return node;
         }
     }
+
+    static class Extentions
+    {
+        public static Dictionary<string, object> ToDictionary(this object source)
+        {
+            Dictionary<string, object> result = new Dictionary<string, object>();
+
+            if (source is Dictionary<string, object>)
+            {
+                return source as Dictionary<string, object>;
+            }
+
+            return source.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(x));
+        }
+    }
+
 }

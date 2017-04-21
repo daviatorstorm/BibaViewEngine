@@ -1,9 +1,9 @@
 ﻿using BibaViewEngine.Models;
-using System;
 using BibaViewEngine.Compiler;
 using HtmlAgilityPack;
 using System.IO;
 using System.Linq;
+using BibaViewEngine.Attributes;
 
 namespace BibaViewEngine
 {
@@ -25,15 +25,9 @@ namespace BibaViewEngine
         }
 
         public BibaCompiler _compiler;
-        public string Name
-        {
-            get
-            {
-                var _name = GetType().Name.Replace("Component", "").ToLower();
-                return string.IsNullOrWhiteSpace(_name) ? _name : throw new Exception("Component must have name");
-            }
-        }
+        [Ignore]
         public HtmlNode HtmlElement { get; internal set; }
+        [Ignore]
         public string Template { get; private set; }
 
         public delegate void CompileComplete(HtmlElement element);
