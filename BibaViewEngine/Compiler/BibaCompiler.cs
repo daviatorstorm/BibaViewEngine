@@ -5,19 +5,12 @@ using System.Reflection;
 using System.Collections.Generic;
 using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
-using System.Collections;
 using BibaViewEngine.Models;
 
 namespace BibaViewEngine.Compiler
 {
     public class BibaCompiler
     {
-        // public string[] _tags = new string[] {
-        //     "div", "h1", "p", "form", "html", "body", "head",
-        //     "doctype", "meta", "style", "script", "#comment",
-        //     "#text", "title", "hr", "ul", "li"
-        // };
-
         private readonly RegistesteredTags _tags;
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
@@ -118,7 +111,6 @@ namespace BibaViewEngine.Compiler
 
         public HtmlNode Compile(HtmlNode node, object context)
         {
-            // TODO: Test this shit
             var newContext = context.ToDictionary();
             var matches = directive.Matches(node.InnerHtml);
             foreach (Match match in matches)
@@ -126,7 +118,8 @@ namespace BibaViewEngine.Compiler
                 var itemName = match.Groups[1].Value;
                 var matchValue = match.Value;
                 object propValue;
-                if(!newContext.TryGetValue(itemName, out propValue)){
+                if (!newContext.TryGetValue(itemName, out propValue))
+                {
                     propValue = null;
                 }
                 node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue as string);
@@ -142,6 +135,23 @@ namespace BibaViewEngine.Compiler
                 .Select(x => new KeyValuePair<string, object>(x.Name.ToLower(), x.GetValue(parent)));
 
             return props;
+        }
+
+        public void ClearAttributes(HtmlNode node)
+        {
+            node.Attributes.RemoveAll();
+        }
+
+        public void Transclude(Component component)
+        {
+            var regex = new Regex("<\\s*template\\s*\\/>");
+
+            if (!regex.Match(component.Template).Success)
+            {
+                throw new Exception("Template must");
+            }
+
+            component.HtmlElement.InnerHtml = Regex.Replace(component.Template, "<\\s*template\\s*\\/>", component.HtmlElement.InnerHtml);
         }
     }
 

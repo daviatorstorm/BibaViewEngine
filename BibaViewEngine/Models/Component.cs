@@ -29,6 +29,7 @@ namespace BibaViewEngine
         public HtmlNode HtmlElement { get; internal set; }
         [Ignore]
         public string Template { get; private set; }
+        [Ignore]
         public string ComponentName
         {
             get
@@ -36,6 +37,9 @@ namespace BibaViewEngine
                 return GetType().Name;
             }
         }
+
+        public bool _transclude { get; set; } = false;
+        public bool _compileTemplate { get; set; } = true;
 
         public delegate void CompileComplete(HtmlElement element);
         public delegate void CompileStart(HtmlElement element);
@@ -45,9 +49,20 @@ namespace BibaViewEngine
 
         public virtual void InnerCompile()
         {
-            HtmlElement.InnerHtml = Template;
+            if (_transclude)
+            {
+                _compiler.Transclude(this);
+            }
+            else
+            {
+                HtmlElement.InnerHtml = Template;
+            }
+
             _compiler.ExecuteCompiler(HtmlElement, this);
+
             _compiler.Compile(HtmlElement, this);
+
+            _compiler.ClearAttributes(HtmlElement);
         }
     }
 }

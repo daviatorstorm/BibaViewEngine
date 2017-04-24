@@ -1,7 +1,6 @@
 using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 
 namespace BibaViewEngine
 {
@@ -36,6 +35,8 @@ namespace BibaViewEngine
                 HtmlElement.AppendChild(compiledHtml);
                 dic.Clear();
             }
+
+            _compiler.ClearAttributes(HtmlElement);
         }
     }
 }

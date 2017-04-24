@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
-using System.Resources;
 
 namespace BibaViewEngine
 {
