@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
 using BibaViewEngine.Models;
+using Microsoft.CodeAnalysis.CSharp.Scripting; // Will potantialy used
 
 namespace BibaViewEngine.Compiler
 {
@@ -113,6 +114,7 @@ namespace BibaViewEngine.Compiler
         {
             var newContext = context.ToDictionary();
             var matches = directive.Matches(node.InnerHtml);
+
             foreach (Match match in matches)
             {
                 var itemName = match.Groups[1].Value;
@@ -169,5 +171,4 @@ namespace BibaViewEngine.Compiler
             return source.GetType().GetProperties().ToDictionary(x => x.Name.ToLower(), x => x.GetValue(source));
         }
     }
-
 }
