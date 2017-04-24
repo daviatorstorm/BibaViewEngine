@@ -23,21 +23,18 @@ namespace BibaViewEngine
             }
 
             var dic = new Dictionary<string, object>();
-            dynamic context = new ExpandoObject();
-            var eoCall = (ICollection<KeyValuePair<string, object>>)context;
             var tmpDoc = new HtmlDocument();
             var innerHtml = HtmlElement.InnerHtml;
             HtmlElement.InnerHtml = string.Empty;
-
+            
             foreach (var item in Source)
             {
-                eoCall.Add(new KeyValuePair<string, object>(Iter.ToLower(), item));
-                dynamic tmp = context;
-
                 var newNode = tmpDoc.CreateElement(Element);
                 newNode.InnerHtml = innerHtml;
-                var compiledHtml = _compiler.Compile(newNode, tmp);
-                eoCall.Clear();
+                dic[Iter] = item;
+                var compiledHtml = _compiler.Compile(newNode, dic);
+                HtmlElement.AppendChild(compiledHtml);
+                dic.Clear();
             }
         }
     }

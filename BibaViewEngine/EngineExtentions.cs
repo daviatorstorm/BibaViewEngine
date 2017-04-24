@@ -8,11 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic;
+using System.Resources;
 
 namespace BibaViewEngine
 {
     public static class EngineExtensions
     {
+        const string registeredTags = "['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'base', 'basefont', 'big', 'blink', 'blockquote', 'body', 'br', 'b', 'button', 'caption', 'center', 'cite', 'code', 'col', 'dfn', 'dir', 'div', 'dl', 'dt', 'dd', 'em', 'font', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'img', 'input', 'isindex', 'i', 'kbd', 'link', 'li', 'map', 'marquee', 'menu', 'meta', 'ol', 'option', 'param', 'pre', 'p', 'q', 'samp', 'script', 'select', 'small', 'span', 'strikeout', 'strong', 'style', 'sub', 'sup', 'table', 'td', 'textarea', 'th', 'tbody', 'thead', 'tfoot', 'title', 'tr', 'tt', 'ul', 'u', 'var']";
         static BibaViewEngineProperties _props;
         public static IApplicationBuilder UseBibaViewEngine(this IApplicationBuilder app)
         {
@@ -35,6 +38,8 @@ namespace BibaViewEngine
         {
             var ass = Assembly.GetEntryAssembly();
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
+            var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
+            tags = tags.Concat(new string[] { "#text", "#comment" });
 
             var components = new RegisteredComponentsCollection
             {
@@ -51,6 +56,7 @@ namespace BibaViewEngine
             services.AddSingleton(props);
             services.AddSingleton(ass);
             services.AddSingleton(components);
+            services.AddSingleton(new RegistesteredTags(tags));
             services.AddTransient<IBibaRouter, BibaRouter>();
 
             services.AddTransient<BibaCompiler>();

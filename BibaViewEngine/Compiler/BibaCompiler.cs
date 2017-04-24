@@ -6,27 +6,30 @@ using System.Collections.Generic;
 using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
 using System.Collections;
+using BibaViewEngine.Models;
 
 namespace BibaViewEngine.Compiler
 {
     public class BibaCompiler
     {
-        public string[] registeredTags = new string[] {
-            "div", "h1", "p", "form", "html", "body", "head",
-            "doctype", "meta", "style", "script", "#comment",
-            "#text", "title", "hr", "ul", "li"
-        };
+        // public string[] _tags = new string[] {
+        //     "div", "h1", "p", "form", "html", "body", "head",
+        //     "doctype", "meta", "style", "script", "#comment",
+        //     "#text", "title", "hr", "ul", "li"
+        // };
 
+        private readonly RegistesteredTags _tags;
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
         private readonly IEnumerable<Type> _registeredComponents;
         private readonly Regex directive = new Regex("\\(\\[([\\w]+)\\]\\)");
 
-        public BibaCompiler(Assembly ass, RegisteredComponentsCollection components)
+        public BibaCompiler(Assembly ass, RegisteredComponentsCollection components, RegistesteredTags tags)
         {
             _ass = ass;
             _doc = new HtmlDocument();
             _registeredComponents = components.components;
+            _tags = tags;
         }
 
         public string StartCompile(string html)
@@ -42,7 +45,7 @@ namespace BibaViewEngine.Compiler
 
             var nodes = node.Descendants().ToList();
 
-            foreach (var element in nodes.Where(x => !registeredTags.Contains(x.Name)))
+            foreach (var element in nodes.Where(x => !_tags.Contains(x.Name)))
             {
                 excractedNodes.Add(element);
             }
@@ -113,15 +116,6 @@ namespace BibaViewEngine.Compiler
             return child;
         }
 
-        public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
-        {
-            var props = parent.GetType().GetProperties()
-                .Where(x => !x.CustomAttributes.Any(y => y.AttributeType.Equals(typeof(IgnoreAttribute))))
-                .Select(x => new KeyValuePair<string, object>(x.Name.ToLower(), x.GetValue(parent)));
-
-            return props;
-        }
-
         public HtmlNode Compile(HtmlNode node, object context)
         {
             // TODO: Test this shit
@@ -131,11 +125,23 @@ namespace BibaViewEngine.Compiler
             {
                 var itemName = match.Groups[1].Value;
                 var matchValue = match.Value;
-                var propValue = newContext[itemName] as string;
-                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue);
+                object propValue;
+                if(!newContext.TryGetValue(itemName, out propValue)){
+                    propValue = null;
+                }
+                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue as string);
             }
 
             return node;
+        }
+
+        public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
+        {
+            var props = parent.GetType().GetProperties()
+                .Where(x => !x.CustomAttributes.Any(y => y.AttributeType.Equals(typeof(IgnoreAttribute))))
+                .Select(x => new KeyValuePair<string, object>(x.Name.ToLower(), x.GetValue(parent)));
+
+            return props;
         }
     }
 
@@ -150,7 +156,7 @@ namespace BibaViewEngine.Compiler
                 return source as Dictionary<string, object>;
             }
 
-            return source.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(x));
+            return source.GetType().GetProperties().ToDictionary(x => x.Name.ToLower(), x => x.GetValue(source));
         }
     }
 

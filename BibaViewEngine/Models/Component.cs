@@ -29,6 +29,13 @@ namespace BibaViewEngine
         public HtmlNode HtmlElement { get; internal set; }
         [Ignore]
         public string Template { get; private set; }
+        public string ComponentName
+        {
+            get
+            {
+                return GetType().Name;
+            }
+        }
 
         public delegate void CompileComplete(HtmlElement element);
         public delegate void CompileStart(HtmlElement element);
@@ -39,8 +46,8 @@ namespace BibaViewEngine
         public virtual void InnerCompile()
         {
             HtmlElement.InnerHtml = Template;
-            var compiledTemplate = _compiler.Compile(HtmlElement, this);
-            _compiler.ExecuteCompiler(compiledTemplate, this);
+            _compiler.ExecuteCompiler(HtmlElement, this);
+            _compiler.Compile(HtmlElement, this);
         }
     }
 }
