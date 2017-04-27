@@ -1,1 +1,0 @@
-dotnet-runweb: dotnet run
