@@ -1,1 +1,1 @@
-web: dotnet run
+dotnet-runweb: dotnet run
