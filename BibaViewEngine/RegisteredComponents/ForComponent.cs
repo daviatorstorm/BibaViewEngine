@@ -10,10 +10,6 @@ namespace BibaViewEngine
         public string Iter { get; set; }
         public string Element { get; set; }
 
-        public ForComponent()
-        {
-        }
-
         public override void InnerCompile()
         {
             if (Iter == null || Element == null)

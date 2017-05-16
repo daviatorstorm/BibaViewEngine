@@ -1,6 +1,8 @@
-﻿namespace BibaViewEngine.Interfaces
+﻿using Microsoft.AspNetCore.Routing;
+
+namespace BibaViewEngine.Interfaces
 {
-    public interface IBibaRouter
+    public interface IBibaRouter : IRouter
     {
     }
 }

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Routing;
 
 namespace BibaViewEngine
 {
@@ -18,19 +19,18 @@ namespace BibaViewEngine
         static BibaViewEngineProperties _props;
         public static IApplicationBuilder UseBibaViewEngine(this IApplicationBuilder app)
         {
-            var builder = app;
+            var router = app.ApplicationServices.GetRequiredService<IBibaRouter>();
 
+            var routerBuilder = new RouteBuilder(app, router);
+
+            routerBuilder.MapRoute("Get component", "c/{component}");
+
+            var builtRouter = routerBuilder.Build();
+
+            app.UseRouter(builtRouter);
             app.UseMiddleware<BibaMiddleware>();
 
-            app.Map("/c", (subApp) =>
-            {
-                subApp.Run((constext) =>
-                {
-                    return Task.FromResult(constext);
-                });
-            });
-
-            return builder;
+            return app;
         }
 
         public static IServiceCollection AddBibaViewEngine(this IServiceCollection services, BibaViewEngineProperties props = null)
@@ -49,6 +49,8 @@ namespace BibaViewEngine
             {
                 props = new BibaViewEngineProperties();
             }
+
+            services.AddRouting();
 
             _props = props;
 
