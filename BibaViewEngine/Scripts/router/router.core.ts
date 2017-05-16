@@ -4,12 +4,17 @@ class BibaRouter {
     }
 
     initRouterLinks() {
-        var routerLinks = document.getElementsByTagName('router-link');
-        var allElements = document.body.getElementsByTagName('*');
+        var routerLinks: HTMLElement[] = [];
+        var allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
 
-        for (var i = 0; i < routerLinks.length; i++) {
-            var routerLink = routerLinks[i];
+        for (var item of allElements) {
+            var attr = item.attributes.getNamedItem('router-link');
+            if (attr) {
+                routerLinks.push(item);
+            }
+        }
 
+        for (var routerLink of routerLinks) {
             var newLinkContainer = document.createElement('a');
             newLinkContainer.innerHTML = routerLink.innerHTML;
 
@@ -58,9 +63,9 @@ class BibaRouter {
     }
 }
 
-interface Route<T> {
-    path: string;
-    args: T | any;
-}
+//interface Route<T> {
+//    path: string;
+//    args: T | any;
+//}
 
 new BibaRouter();

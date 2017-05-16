@@ -24,7 +24,7 @@ namespace BibaViewEngine.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-            var mainHtml = File.ReadAllText(_props.IndexHtml);
+            var mainHtml = File.ReadAllText(_props.IndexHtmlBuild);
 
             await context.Response.WriteAsync(await Task.Run(() =>
             {

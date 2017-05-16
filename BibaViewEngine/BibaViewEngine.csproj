@@ -9,10 +9,39 @@
     <PackageReference Include="Microsoft.AspNetCore" Version="1.1.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Routing" Version="1.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.1" />
   </ItemGroup>
+  
   <ItemGroup>
-    <None Update="Scripts\**\*.js">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
+    <EmbeddedResource Include="Scripts\**\*.js" Name="Test" />
+    <Content Include="Scripts\**\*.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  
+  <Target Name="BeforeBuildScript" BeforeTargets="BeforeBuild">
+    <Message Text="Executing typescript compiler" />
+    <Exec Command="tsc" IgnoreExitCode="true" />
+  </Target>
+  
+  <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
+    <Message Text="Executing typescript compiler" />
+    <Exec Command="tsc" IgnoreExitCode="true" />
+  </Target>
+
 </Project>

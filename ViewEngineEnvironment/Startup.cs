@@ -8,11 +8,18 @@ namespace ViewEngineEnvironment
 {
     public class Startup
     {
+        private readonly IHostingEnvironment _env;
+
+        public Startup(IHostingEnvironment env)
+        {
+            _env = env;
+        }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddBibaViewEngine();
+            services.AddBibaViewEngine(env: _env);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -26,7 +33,7 @@ namespace ViewEngineEnvironment
             }
 
             app.UseStaticFiles();
-            
+
             app.UseBibaViewEngine();
         }
     }
