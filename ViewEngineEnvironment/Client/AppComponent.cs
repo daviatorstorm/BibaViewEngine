@@ -8,6 +8,5 @@ namespace ViewEngineEnvironment.Client
     {
         [Input]
         public object Config { get; set; }
-        public List<string> Values { get; set; } = new List<string> { "value1", "value2", "value3" };
     }
 }

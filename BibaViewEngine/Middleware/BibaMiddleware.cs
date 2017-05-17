@@ -24,12 +24,16 @@ namespace BibaViewEngine.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-            var mainHtml = File.ReadAllText(_props.IndexHtmlBuild);
-
-            await context.Response.WriteAsync(await Task.Run(() =>
+            if (!context.Response.HasStarted &&
+                !Path.HasExtension(context.Request.Path))
             {
-                return _compiler.StartCompile(mainHtml);
-            }));
+                var mainHtml = File.ReadAllText(_props.IndexHtmlBuild);
+
+                await context.Response.WriteAsync(await Task.Run(() =>
+                {
+                    return _compiler.StartCompile(mainHtml);
+                }));
+            }
         }
     }
 }

@@ -1,4 +1,6 @@
 class BibaRouter {
+    routerContainer: HTMLElement;
+
     constructor() {
         document.addEventListener('DOMContentLoaded', () => this.initRouterLinks());
     }
@@ -8,9 +10,12 @@ class BibaRouter {
         var allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
 
         for (var item of allElements) {
-            var attr = item.attributes.getNamedItem('router-link');
+            var attr = item.attributes.getNamedItem('router-path');
             if (attr) {
                 routerLinks.push(item);
+            } else if (item.attributes.getNamedItem('router-container')) {
+                this.routerContainer = item;
+                this.routerContainer.attributes.removeNamedItem('router-container');
             }
         }
 
@@ -18,13 +23,15 @@ class BibaRouter {
             var newLinkContainer = document.createElement('a');
             newLinkContainer.innerHTML = routerLink.innerHTML;
 
-            newLinkContainer.href = routerLink.attributes.getNamedItem('path').value;
+            newLinkContainer.href = routerLink.attributes.getNamedItem('router-path').value;
 
             this.giveAnchorHandler(newLinkContainer);
 
             routerLink.parentElement.insertBefore(newLinkContainer, routerLink);
             routerLink.parentElement.removeChild(routerLink);
         }
+
+        this.routerContainer.innerHTML = this.getComponent(location.pathname);
 
         return {} as any;
     }
@@ -38,18 +45,20 @@ class BibaRouter {
 
         var routerContainer = document.getElementsByTagName('router-container');
 
-        var template = this.getComponent((event.target as HTMLAnchorElement).attributes.getNamedItem('href').value);
+        this.routerContainer.innerHTML = this.getComponent((event.target as HTMLAnchorElement).attributes.getNamedItem('href').value);
 
         return false;
     }
 
     getComponent(path: string, data?: any) {
-        var req = new XMLHttpRequest();
-        var template = '';
+        let req = new XMLHttpRequest();
+        let template = '';
+        let newPath = `c/${path}`.replace('//', '/')
 
-        req.open('POST', `c/${path}`, false);
+        req.open('POST', newPath, false);
 
-        req.onload = (event: Event) => {
+        req.onload = (event: any) => {
+            template = event.target.response;
             console.log(event);
         };
 

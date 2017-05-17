@@ -1,8 +1,10 @@
 ﻿using BibaViewEngine;
+using BibaViewEngine.Router;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ViewEngineEnvironment.Client.Components;
 
 namespace ViewEngineEnvironment
 {
@@ -19,7 +21,13 @@ namespace ViewEngineEnvironment
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddBibaViewEngine(env: _env);
+            var routes = new Routes
+            {
+                new BibaRoute { Path= "", Component = typeof(MainComponent) },
+                new BibaRoute { Path= "list", Component = typeof(ListComponent) }
+            };
+
+            services.AddBibaViewEngine(routes: routes);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

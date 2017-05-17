@@ -18,9 +18,9 @@ namespace BibaViewEngine.Compiler
         private readonly IEnumerable<Type> _registeredComponents;
         private readonly Regex directive = new Regex("\\(\\[([\\w]+)\\]\\)");
 
-        public BibaCompiler(Assembly ass, RegisteredComponentsCollection components, RegistesteredTags tags)
+        public BibaCompiler(RegisteredComponentsCollection components, RegistesteredTags tags)
         {
-            _ass = ass;
+            _ass = Assembly.GetEntryAssembly();
             _doc = new HtmlDocument();
             _registeredComponents = components.components;
             _tags = tags;
