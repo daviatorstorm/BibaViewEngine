@@ -1,6 +1,0 @@
-{
-  "compilerOptions": {
-    "removeComments": false,
-    "outFile": "Scripts/build.js"
-  }
-}
