@@ -7,6 +7,8 @@ Now Biba view engine is live: https://test-aspnet-core.herokuapp.com/
 
 Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple have some similarness with angularjs and/or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works.
 
+> Currently it is working with netcoreapp1.1, SDK 1.0.3
+
 ## Docs
 
 You can look at working [sample](https://github.com/daviatorstorm/BibaViewEngineSample) with router.
@@ -22,7 +24,7 @@ First you need to add Nuget.config file to the root project directory with the n
 </configuration>
 ```
 
-To make a Biba work you must to add Services and pipe to you application.
+To make a Biba work you must to add Services and pipe to you application in Startup.cs file
 
 Example: 
 
