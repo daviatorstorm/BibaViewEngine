@@ -41,18 +41,28 @@ namespace BibaViewEngine.Router
 
         private void ExecuteRouter(string routeName, HttpContext context)
         {
-            var component = Activator.CreateInstance(_routes.First(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase)).Component) as Component;
+            var route = _routes.FirstOrDefault(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase));
+            Component component = null;
 
-            var doc = new HtmlDocument();
-            doc.LoadHtml(component.Template);
+            if(route != null)
+            {
+                component = Activator.CreateInstance(route.Component) as Component;
 
-            component.HtmlElement = doc.DocumentNode;
+                var doc = new HtmlDocument();
+                doc.LoadHtml(component.Template);
 
-            component._compiler = _compiler;
+                component.HtmlElement = doc.DocumentNode;
 
-            _compiler.Compile(component);
+                component._compiler = _compiler;
 
-            context.Response.WriteAsync(component.HtmlElement.InnerHtml);
+                _compiler.Compile(component);
+
+                context.Response.WriteAsync(component.HtmlElement.InnerHtml);
+            }
+            else
+            {
+                context.Response.StatusCode = 404;
+            }
         }
     }
 }

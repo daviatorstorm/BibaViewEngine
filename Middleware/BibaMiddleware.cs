@@ -24,7 +24,7 @@ namespace BibaViewEngine.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-            if (!context.Response.HasStarted &&
+            if (!context.Response.HasStarted && context.Response.StatusCode != 404 &&
                 !Path.HasExtension(context.Request.Path))
             {
                 var mainHtml = File.ReadAllText(_props.IndexHtmlBuild);
