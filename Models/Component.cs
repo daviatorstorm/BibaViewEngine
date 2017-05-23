@@ -1,5 +1,4 @@
-﻿using BibaViewEngine.Models;
-using BibaViewEngine.Compiler;
+﻿using BibaViewEngine.Compiler;
 using HtmlAgilityPack;
 using System.IO;
 using System.Linq;
@@ -26,9 +25,9 @@ namespace BibaViewEngine
 
         public BibaCompiler _compiler;
         [Ignore]
-        public HtmlNode HtmlElement { get; internal set; }
+        public virtual HtmlNode  HtmlElement { get; internal set; }
         [Ignore]
-        public string Template { get; private set; }
+        public virtual string Template { get; private set; }
         [Ignore]
         public string ComponentName
         {
@@ -39,13 +38,15 @@ namespace BibaViewEngine
         }
 
         public bool _transclude { get; set; } = false;
-        public bool _compileTemplate { get; set; } = true;
 
-        public delegate void CompileComplete(HtmlElement element);
-        public delegate void CompileStart(HtmlElement element);
+        public delegate void EmptyDelegate();
+        public delegate void BeforePropertiesSet(object sender);
 
-        public event CompileComplete OnCompileComplete;
-        public event CompileStart OnCompileStart;
+        protected event EmptyDelegate OnCompileFinish;
+        protected event EmptyDelegate OnCompileStart;
+
+        protected event BeforePropertiesSet OnBeforePropertiesSet;
+        protected event EmptyDelegate OnAfterPropertiesSet;
 
         public virtual void InnerCompile()
         {
@@ -63,6 +64,13 @@ namespace BibaViewEngine
             _compiler.Compile(HtmlElement, this);
 
             _compiler.ClearAttributes(HtmlElement);
+        }
+
+        private void _InnerCompile()
+        {
+            OnCompileStart();
+            InnerCompile();
+            OnCompileFinish();
         }
     }
 }

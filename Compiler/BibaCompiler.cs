@@ -124,7 +124,7 @@ namespace BibaViewEngine.Compiler
                 {
                     propValue = null;
                 }
-                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue as string);
+                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue.ToString());
             }
 
             return node;
