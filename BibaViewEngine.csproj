@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <Version>0.0.2</Version>
     <Description>Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple and have some similarness with angularjs and/or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works.
@@ -13,10 +13,10 @@ Enjoy using engine :)</Description>
 
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="1.1.2" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Routing" Version="1.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0-preview2-final" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.3.0-beta3" />
+    <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.0.0-preview2-final" />
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.0.0-preview2-final" />
   </ItemGroup>
   
   <ItemGroup>

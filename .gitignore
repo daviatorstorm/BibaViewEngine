@@ -1,8 +1,9 @@
-**/*/bin
-**/*/obj
 **/*/*.csproj.user
 /.vs
 
 **/*.build.html
 **/build.js
 **/*.nupkg
+
+obj/
+bin/
