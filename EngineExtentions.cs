@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
 
 namespace BibaViewEngine
 {
@@ -36,12 +38,16 @@ namespace BibaViewEngine
             app.UseRouter(builtRouter);
             app.UseMiddleware<BibaMiddleware>();
 
+            CSharpScript.EvaluateAsync("1 + 2");
+
             return app;
         }
 
         public static IServiceCollection AddBibaViewEngine(this IServiceCollection services, Routes routes = null, BibaViewEngineProperties props = null)
         {
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
+            ResourceManager rm = new ResourceManager("Component", engineAss);
+
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
             tags = tags.Concat(new string[] { "#text", "#comment" });
             Routes outRoutes;

@@ -7,16 +7,25 @@ using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
 using BibaViewEngine.Models;
 using Microsoft.CodeAnalysis.CSharp.Scripting; // Will potantialy used
+using BibaViewEngine.Utils;
+using System.Threading.Tasks;
+using System.Collections;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace BibaViewEngine.Compiler
 {
-    public class BibaCompiler
+    public class BibaCompiler : IDisposable
     {
         private readonly RegistesteredTags _tags;
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
         private readonly IEnumerable<Type> _registeredComponents;
-        private readonly Regex directive = new Regex("\\(\\[([\\w]+)\\]\\)");
+        private readonly Regex directive = new Regex("\\(\\[([\\w \\+\\.\\\"\\-\\*\\/\\(\\)]+)\\]\\)");
+
+        bool disposed = false;
+        SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
+
 
         public BibaCompiler(RegisteredComponentsCollection components, RegistesteredTags tags)
         {
@@ -105,7 +114,7 @@ namespace BibaViewEngine.Compiler
                 }
             }
 
-            child.InnerCompile();
+            child._InnerCompile();
 
             return child;
         }
@@ -118,13 +127,39 @@ namespace BibaViewEngine.Compiler
             foreach (Match match in matches)
             {
                 var itemName = match.Groups[1].Value;
-                var matchValue = match.Value;
+                var matchValue = match.Value.ToLower();
                 object propValue;
                 if (!newContext.TryGetValue(itemName, out propValue))
                 {
                     propValue = null;
                 }
                 node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue?.ToString());
+            }
+
+            return node;
+        }
+
+        public HtmlNode CompileV2(HtmlNode node, object context)
+        {
+            var compileList = new List<Task>();
+
+            var matches = directive.Matches(node.InnerHtml)
+                .OfType<Match>()
+                .Distinct(new EqualityComparer());
+
+            string replacement = node.InnerHtml;
+
+            foreach (var match in matches)
+            {
+                compileList.Add(CSharpScript.EvaluateAsync(match.Groups[1].Value, globals: context).ContinueWith(res =>
+                {
+                    replacement = replacement.Replace(match.Value, res.Result.ToString());
+                }));
+            }
+
+            if (compileList.Count > 0)
+            {
+                Task.Factory.ContinueWhenAll(compileList.ToArray(), res => node.InnerHtml = replacement).Wait();
             }
 
             return node;
@@ -154,6 +189,37 @@ namespace BibaViewEngine.Compiler
             }
 
             component.HtmlElement.InnerHtml = Regex.Replace(component.Template, "<\\s*template\\s*\\/>", component.HtmlElement.InnerHtml);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed) return;
+
+            if (disposing)
+            {
+                handle.Dispose();
+            }
+
+            disposed = true;
+        }
+    }
+
+    public class EqualityComparer : IEqualityComparer<Match>
+    {
+        public bool Equals(Match x, Match y)
+        {
+            return x.Value == y.Value;
+        }
+
+        public int GetHashCode(Match obj)
+        {
+            return obj.Value.GetHashCode();
         }
     }
 

@@ -4,6 +4,7 @@ using BibaViewEngine.Models;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
 
 namespace BibaViewEngine.Middleware
 {
@@ -20,6 +21,7 @@ namespace BibaViewEngine.Middleware
             _next = next;
             _props = props;
             _router = router;
+            CSharpScript.EvaluateAsync("1 + 2");
         }
 
         public async Task Invoke(HttpContext context)

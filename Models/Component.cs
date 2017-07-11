@@ -25,7 +25,7 @@ namespace BibaViewEngine
 
         public BibaCompiler _compiler;
         [Ignore]
-        public virtual HtmlNode  HtmlElement { get; internal set; }
+        public virtual HtmlNode HtmlElement { get; internal set; }
         [Ignore]
         public virtual string Template { get; private set; }
         [Ignore]
@@ -61,16 +61,25 @@ namespace BibaViewEngine
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
-            _compiler.Compile(HtmlElement, this);
+            // _compiler.Compile(HtmlElement, this);
+            _compiler.CompileV2(HtmlElement, this);
 
             _compiler.ClearAttributes(HtmlElement);
         }
 
-        private void _InnerCompile()
+        public void _InnerCompile()
         {
-            OnCompileStart();
+            if (OnCompileStart != null)
+            {
+                OnCompileStart();
+            }
+
             InnerCompile();
-            OnCompileFinish();
+
+            if (OnCompileFinish != null)
+            {
+                OnCompileFinish();
+            }
         }
     }
 }
