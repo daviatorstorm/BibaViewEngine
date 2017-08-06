@@ -46,6 +46,7 @@ namespace BibaViewEngine
         public static IServiceCollection AddBibaViewEngine(this IServiceCollection services, Routes routes = null, BibaViewEngineProperties props = null)
         {
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
+            var workingAss = Assembly.GetEntryAssembly();
             ResourceManager rm = new ResourceManager("Component", engineAss);
 
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
@@ -55,6 +56,7 @@ namespace BibaViewEngine
             var components = new RegisteredComponentsCollection
             {
                 components = engineAss.GetTypes().Where(x => x.GetTypeInfo().BaseType == typeof(Component))
+                    .Concat(workingAss.GetTypes().Where(x => x.GetTypeInfo().BaseType == typeof(Component)))
             };
 
             if (props == null)

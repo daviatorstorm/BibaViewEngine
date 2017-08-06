@@ -33,7 +33,7 @@ namespace BibaViewEngine
         {
             get
             {
-                return GetType().Name;
+                return GetType().Name.Replace("Component", "");
             }
         }
 
@@ -61,7 +61,6 @@ namespace BibaViewEngine
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
-            // _compiler.Compile(HtmlElement, this);
             _compiler.CompileV2(HtmlElement, this);
 
             _compiler.ClearAttributes(HtmlElement);

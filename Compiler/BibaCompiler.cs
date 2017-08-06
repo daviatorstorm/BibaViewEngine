@@ -6,12 +6,13 @@ using System.Collections.Generic;
 using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
 using BibaViewEngine.Models;
-using Microsoft.CodeAnalysis.CSharp.Scripting; // Will potantialy used
+using Microsoft.CodeAnalysis.CSharp.Scripting;
 using BibaViewEngine.Utils;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace BibaViewEngine.Compiler
 {
@@ -25,7 +26,6 @@ namespace BibaViewEngine.Compiler
 
         bool disposed = false;
         SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
-
 
         public BibaCompiler(RegisteredComponentsCollection components, RegistesteredTags tags)
         {
@@ -70,8 +70,7 @@ namespace BibaViewEngine.Compiler
 
         public Component FindComponent(HtmlNode node)
         {
-            var components = _registeredComponents.Concat(_ass.GetTypes().Where(x => x.GetTypeInfo().BaseType == typeof(Component)));
-            var component = components.Single(x => x.Name.Replace("Component", "").ToLower() == node.Name);
+            var component = _registeredComponents.Single(x => x.Name.Replace("Component", "").ToLower() == node.Name);
 
             var componentInstance = Activator.CreateInstance(component) as Component;
 
@@ -151,7 +150,7 @@ namespace BibaViewEngine.Compiler
 
             foreach (var match in matches)
             {
-                compileList.Add(CSharpScript.EvaluateAsync(match.Groups[1].Value, globals: context).ContinueWith(res =>
+                compileList.Add(Evaluate(match.Groups[1].Value, context).ContinueWith(res =>
                 {
                     replacement = replacement.Replace(match.Value, res.Result.ToString());
                 }));
@@ -163,6 +162,13 @@ namespace BibaViewEngine.Compiler
             }
 
             return node;
+        }
+
+        public async Task<object> Evaluate(string code, object context)
+        {
+            var script = CSharpScript.Create<object>(code, globalsType: context.GetType());
+            ScriptRunner<object> runner = script.CreateDelegate();
+            return await runner(context);
         }
 
         public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
