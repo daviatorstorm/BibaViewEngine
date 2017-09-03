@@ -13,7 +13,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
 
 namespace BibaViewEngine
 {
@@ -37,8 +36,6 @@ namespace BibaViewEngine
 
             app.UseRouter(builtRouter);
             app.UseMiddleware<BibaMiddleware>();
-
-            CSharpScript.EvaluateAsync("1 + 2");
 
             return app;
         }

@@ -4,7 +4,6 @@ using BibaViewEngine.Models;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
 
 namespace BibaViewEngine.Middleware
 {

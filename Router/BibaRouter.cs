@@ -46,7 +46,7 @@ namespace BibaViewEngine.Router
 
             if(route != null)
             {
-                component = Activator.CreateInstance(route.Component) as Component;
+                component = Component.Create(_compiler, null, route.Component);
 
                 var doc = new HtmlDocument();
                 doc.LoadHtml(component.Template);

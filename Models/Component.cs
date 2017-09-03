@@ -3,27 +3,40 @@ using HtmlAgilityPack;
 using System.IO;
 using System.Linq;
 using BibaViewEngine.Attributes;
+using System;
 
 namespace BibaViewEngine
 {
     public class Component
     {
-        public Component()
+        internal static Component Create(BibaCompiler compiler, HtmlNode node, Type componentType)
         {
+            if (!typeof(Component).IsAssignableFrom(componentType))
+            {
+                throw new Exception($"Component must inherited from Component type");
+            }
+
+            var componentInstanse = Activator.CreateInstance(componentType) as Component;
+
+            componentInstanse._compiler = compiler;
+            componentInstanse.HtmlElement = node;
+
             try
             {
                 var fileLocation = Directory.GetFiles("Client", "*.html", SearchOption.AllDirectories)
-                   .Single(x => Path.GetFileNameWithoutExtension(x) == GetType().Name);
+                   .Single(x => Path.GetFileNameWithoutExtension(x) == componentInstanse.GetType().Name);
 
-                Template = File.ReadAllText(fileLocation);
+                componentInstanse.Template = File.ReadAllText(fileLocation);
             }
             catch
             {
-                Template = "";
+                componentInstanse.Template = "";
             }
+
+            return componentInstanse;
         }
 
-        public BibaCompiler _compiler;
+        internal BibaCompiler _compiler;
         [Ignore]
         public virtual HtmlNode HtmlElement { get; internal set; }
         [Ignore]
@@ -48,7 +61,9 @@ namespace BibaViewEngine
         protected event BeforePropertiesSet OnBeforePropertiesSet;
         protected event EmptyDelegate OnAfterPropertiesSet;
 
-        public virtual void InnerCompile()
+        public virtual void InnerCompile() { }
+
+        internal void _InnerCompile()
         {
             if (_transclude)
             {
@@ -59,19 +74,16 @@ namespace BibaViewEngine
                 HtmlElement.InnerHtml = Template;
             }
 
-            _compiler.ExecuteCompiler(HtmlElement, this);
-
-            _compiler.CompileV2(HtmlElement, this);
-
-            _compiler.ClearAttributes(HtmlElement);
-        }
-
-        public void _InnerCompile()
-        {
             if (OnCompileStart != null)
             {
                 OnCompileStart();
             }
+
+            _compiler.ExecuteCompiler(HtmlElement, this);
+
+            _compiler.Compile(HtmlElement, this);
+
+            _compiler.ClearAttributes(HtmlElement);
 
             InnerCompile();
 

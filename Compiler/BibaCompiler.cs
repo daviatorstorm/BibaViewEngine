@@ -6,13 +6,10 @@ using System.Collections.Generic;
 using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
 using BibaViewEngine.Models;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using BibaViewEngine.Utils;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
-using Microsoft.CodeAnalysis.Scripting;
 
 namespace BibaViewEngine.Compiler
 {
@@ -72,12 +69,7 @@ namespace BibaViewEngine.Compiler
         {
             var component = _registeredComponents.Single(x => x.Name.Replace("Component", "").ToLower() == node.Name);
 
-            var componentInstance = Activator.CreateInstance(component) as Component;
-
-            componentInstance._compiler = this;
-            componentInstance.HtmlElement = node;
-
-            return componentInstance;
+            return Component.Create(this, node, component);
         }
 
         public Component Compile(Component child, Component parent = null)
@@ -120,55 +112,23 @@ namespace BibaViewEngine.Compiler
 
         public HtmlNode Compile(HtmlNode node, object context)
         {
-            var newContext = context.ToDictionary();
-            var matches = directive.Matches(node.InnerHtml);
-
-            foreach (Match match in matches)
-            {
-                var itemName = match.Groups[1].Value;
-                var matchValue = match.Value.ToLower();
-                object propValue;
-                if (!newContext.TryGetValue(itemName, out propValue))
-                {
-                    propValue = null;
-                }
-                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue?.ToString());
-            }
-
-            return node;
-        }
-
-        public HtmlNode CompileV2(HtmlNode node, object context)
-        {
-            var compileList = new List<Task>();
-
             var matches = directive.Matches(node.InnerHtml)
                 .OfType<Match>()
                 .Distinct(new EqualityComparer());
 
             string replacement = node.InnerHtml;
 
-            foreach (var match in matches)
+            var eval = Evaluator.Create();
+
+            foreach (Match match in matches)
             {
-                compileList.Add(Evaluate(match.Groups[1].Value, context).ContinueWith(res =>
-                {
-                    replacement = replacement.Replace(match.Value, res.Result.ToString());
-                }));
+                replacement = replacement
+                    .Replace(match.Value, eval.Evaluate(match.Groups[1].Value, context));
             }
 
-            if (compileList.Count > 0)
-            {
-                Task.Factory.ContinueWhenAll(compileList.ToArray(), res => node.InnerHtml = replacement).Wait();
-            }
+            node.InnerHtml = replacement;
 
             return node;
-        }
-
-        public async Task<object> Evaluate(string code, object context)
-        {
-            var script = CSharpScript.Create<object>(code, globalsType: context.GetType());
-            ScriptRunner<object> runner = script.CreateDelegate();
-            return await runner(context);
         }
 
         public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
@@ -226,21 +186,6 @@ namespace BibaViewEngine.Compiler
         public int GetHashCode(Match obj)
         {
             return obj.Value.GetHashCode();
-        }
-    }
-
-    static class Extentions
-    {
-        public static Dictionary<string, object> ToDictionary(this object source)
-        {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-
-            if (source is Dictionary<string, object>)
-            {
-                return source as Dictionary<string, object>;
-            }
-
-            return source.GetType().GetProperties().ToDictionary(x => x.Name.ToLower(), x => x.GetValue(source));
         }
     }
 }
