@@ -13,20 +13,30 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
+using System.Globalization;
+using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace BibaViewEngine
 {
     public static class EngineExtensions
     {
-        const string registeredTags = "['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'base', 'basefont', 'big', 'blink', 'blockquote', 'body', 'br', 'b', 'button', 'caption', 'center', 'cite', 'code', 'col', 'dfn', 'dir', 'div', 'dl', 'dt', 'dd', 'em', 'font', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'img', 'input', 'isindex', 'i', 'kbd', 'link', 'li', 'map', 'marquee', 'menu', 'meta', 'ol', 'option', 'param', 'pre', 'p', 'q', 'samp', 'script', 'select', 'small', 'span', 'strikeout', 'strong', 'style', 'sub', 'sup', 'table', 'td', 'textarea', 'th', 'tbody', 'thead', 'tfoot', 'title', 'tr', 'tt', 'ul', 'u', 'var']";
+        const string registeredTags = "['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'base', 'basefont', 'big', 'blink', 'blockquote', 'body', 'br', 'b', 'button', 'caption', 'center', 'cite', 'code', 'col', 'dfn', 'dir', 'div', 'dl', 'dt', 'dd', 'em', 'font', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'img', 'input', 'isindex', 'i', 'kbd', 'link', 'li', 'map', 'marquee', 'menu', 'meta', 'ol', 'option', 'param', 'pre', 'p', 'q', 'samp', 'script', 'select', 'small', 'span', 'strikeout', 'strong', 'style', 'sub', 'sup', 'table', 'td', 'textarea', 'th', 'tbody', 'thead', 'tfoot', 'title', 'tr', 'tt', 'ul', 'u', 'var', 'nav']";
 
         public static IApplicationBuilder UseBibaViewEngine(this IApplicationBuilder app)
         {
             var router = app.ApplicationServices.GetRequiredService<IBibaRouter>();
             var props = app.ApplicationServices.GetRequiredService<BibaViewEngineProperties>();
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
-
-            InitHtmlBuild(engineAss, props);
+            var applicationRoot = Directory.GetCurrentDirectory();
+            var resource = engineAss.GetManifestResourceNames();
+            var stream = engineAss.GetManifestResourceStream(resource[0]);
+            stream.Position = 0;
+            var file = File.Create(Path.Combine(applicationRoot, props.ContentRoot, "biba.min.js"));
+            stream.CopyTo(file);
+            file.Close();
+            stream.Close();
 
             var routerBuilder = new RouteBuilder(app, router);
 
@@ -44,7 +54,6 @@ namespace BibaViewEngine
         {
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
             var workingAss = Assembly.GetEntryAssembly();
-            ResourceManager rm = new ResourceManager("Component", engineAss);
 
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
             tags = tags.Concat(new string[] { "#text", "#comment" });
@@ -95,21 +104,6 @@ namespace BibaViewEngine
             }
 
             outRoutes = routes;
-        }
-
-        private static void InitHtmlBuild(Assembly ass, BibaViewEngineProperties props)
-        {
-            var buildFileStream = ass.GetManifestResourceStream(ass.GetManifestResourceNames()[0]);
-
-            var doc = new HtmlDocument();
-            doc.Load(File.OpenRead(props.IndexHtml));
-
-            var node = doc.DocumentNode;
-            var headNode = node.SelectSingleNode("//head");
-
-            headNode.InnerHtml = $"{Environment.NewLine}<script>{Environment.NewLine}{new StreamReader(buildFileStream).ReadToEnd()}</script>{Environment.NewLine}{headNode.InnerHtml}";
-
-            File.WriteAllText(props.IndexHtmlBuild, node.OuterHtml);
         }
     }
 }

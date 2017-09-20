@@ -12,29 +12,18 @@ class BibaRouter {
     }
 
     private initRouterLinks() {
-        var routerLinks: HTMLElement[] = [];
         var allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
 
         for (var item of allElements) {
-            var attr = item.attributes.getNamedItem('router-path');
+            let attr = item.attributes.getNamedItem('router-path');
             if (attr) {
-                routerLinks.push(item);
+                (item as any).path = item.attributes.getNamedItem('router-path').value;
+                item.attributes.removeNamedItem('router-path');
+                this.giveAnchorHandler(item);
             } else if (item.attributes.getNamedItem('router-container')) {
                 this.routerContainer = item;
                 this.routerContainer.attributes.removeNamedItem('router-container');
             }
-        }
-
-        for (var routerLink of routerLinks) {
-            var newLinkContainer = document.createElement('a');
-            newLinkContainer.innerHTML = routerLink.innerHTML;
-
-            newLinkContainer.href = routerLink.attributes.getNamedItem('router-path').value;
-
-            this.giveAnchorHandler(newLinkContainer);
-
-            routerLink.parentElement.insertBefore(newLinkContainer, routerLink);
-            routerLink.parentElement.removeChild(routerLink);
         }
 
         if (this.routerContainer) {
@@ -51,14 +40,14 @@ class BibaRouter {
     }
 
     private routerLinkClickHandler(event: Event) {
-        let componentPath = (event.target as HTMLAnchorElement).attributes.getNamedItem('href').value;
+        let componentPath = (event.target as any).path;
 
         this.onRouteStart(this.currentRoute, { path: componentPath }, this);
 
         this.getComponent(componentPath).then(template => {
             this.routerContainer.innerHTML = template;
 
-            history.pushState({}, document.title, componentPath);
+            history.pushState({}, document.title, componentPath || '/');
 
             this.currentRoute = { path: componentPath };
 
