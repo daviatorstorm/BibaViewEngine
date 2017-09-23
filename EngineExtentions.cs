@@ -31,20 +31,21 @@ namespace BibaViewEngine
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
             var applicationRoot = Directory.GetCurrentDirectory();
             var resource = engineAss.GetManifestResourceNames();
-            var stream = engineAss.GetManifestResourceStream(resource[0]);
-            stream.Position = 0;
-            var file = File.Create(Path.Combine(applicationRoot, props.ContentRoot, "biba.min.js"));
-            stream.CopyTo(file);
-            file.Close();
-            stream.Close();
+            using (var stream = engineAss.GetManifestResourceStream(resource[0]))
+            {
+                stream.Position = 0;
+                using (var file = File.Create(Path.Combine(applicationRoot, props.ContentRoot, "biba.min.js")))
+                {
+                    stream.CopyTo(file);
+                }
+            }
 
-            var routerBuilder = new RouteBuilder(app, router);
-
-            routerBuilder.MapRoute("Get component", "c/{component?}");
-
-            var builtRouter = routerBuilder.Build();
+            var builtRouter = new RouteBuilder(app, router)
+                .MapRoute("Get component", "c/{component?}")
+                .Build();
 
             app.UseRouter(builtRouter);
+
             app.UseMiddleware<BibaMiddleware>();
 
             return app;
@@ -59,12 +60,6 @@ namespace BibaViewEngine
             tags = tags.Concat(new string[] { "#text", "#comment" });
             Routes outRoutes;
 
-            var components = new RegisteredComponentsCollection
-            {
-                components = engineAss.GetTypes().Where(x => x.GetTypeInfo().BaseType == typeof(Component))
-                    .Concat(workingAss.GetTypes().Where(x => x.GetTypeInfo().BaseType == typeof(Component)))
-            };
-
             if (props == null)
             {
                 props = new BibaViewEngineProperties();
@@ -74,13 +69,13 @@ namespace BibaViewEngine
 
             services.AddRouting();
 
-            services.AddSingleton(components);
             services.AddSingleton(outRoutes);
             services.AddSingleton(props);
             services.AddSingleton<BibaViewEngineProperties>();
             services.AddSingleton(new RegistesteredTags(tags));
             services.AddTransient<IBibaRouter, BibaRouter>();
             services.AddTransient<BibaCompiler>();
+            services.AddTransient<ForComponent>();
 
             return services;
         }
@@ -93,12 +88,11 @@ namespace BibaViewEngine
             {
                 routes = outRoutes;
             }
-
             if (routes.Any(x => x.Component == null))
             {
                 throw new Exception("Component property cannot be null");
             }
-            else if (routes.Any(x => x.Path == null))
+            if (routes.Any(x => x.Path == null))
             {
                 throw new Exception("Path property cannot be empty");
             }

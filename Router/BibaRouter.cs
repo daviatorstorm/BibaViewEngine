@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Routing;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BibaViewEngine.Router
 {
@@ -13,11 +15,13 @@ namespace BibaViewEngine.Router
     {
         private readonly Routes _routes;
         private readonly BibaCompiler _compiler;
+        private readonly IServiceProvider _provider;
 
-        public BibaRouter(Routes routes, BibaCompiler compiler)
+        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider services)
         {
             _routes = routes;
             _compiler = compiler;
+            _provider = services;
         }
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
@@ -29,7 +33,7 @@ namespace BibaViewEngine.Router
         {
             var routeName = context.RouteData.Values["component"] as string;
 
-            if(routeName == null)
+            if (routeName == null)
             {
                 routeName = string.Empty;
             }
@@ -42,18 +46,15 @@ namespace BibaViewEngine.Router
         private void ExecuteRouter(string routeName, HttpContext context)
         {
             var route = _routes.FirstOrDefault(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase));
-            Component component = null;
 
-            if(route != null)
+            if (route != null)
             {
-                component = Component.Create(_compiler, null, route.Component);
+                var component = (Component)_provider.GetRequiredService(route.Component);
 
                 var doc = new HtmlDocument();
-                doc.LoadHtml(component.Template);
 
                 component.HtmlElement = doc.DocumentNode;
-
-                component._compiler = _compiler;
+                component.HtmlElement.InnerHtml = component.Template;
 
                 _compiler.Compile(component);
 

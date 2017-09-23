@@ -7,50 +7,27 @@ using System;
 
 namespace BibaViewEngine
 {
-    public class Component
+    public abstract class Component
     {
-        internal static Component Create(BibaCompiler compiler, HtmlNode node, Type componentType)
+        private string _template;
+        public Component(BibaCompiler bibaCompiler)
         {
-            if (!typeof(Component).IsAssignableFrom(componentType))
+            _compiler = bibaCompiler;
+
+            var fileLocation = Directory.GetFiles("Client", $"{GetType().Name}.html",
+                                        SearchOption.AllDirectories).Single();
+
+            using (var stream = File.OpenText(fileLocation))
             {
-                throw new Exception($"Component must inherited from Component type");
+                _template = stream.ReadToEnd();
             }
-
-            var componentInstanse = Activator.CreateInstance(componentType) as Component;
-
-            componentInstanse._compiler = compiler;
-            componentInstanse.HtmlElement = node;
-
-            try
-            {
-                var fileLocation = Directory.GetFiles("Client", "*.html", SearchOption.AllDirectories)
-                   .Single(x => Path.GetFileNameWithoutExtension(x) == componentInstanse.GetType().Name);
-
-                componentInstanse.Template = File.ReadAllText(fileLocation);
-            }
-            catch
-            {
-                componentInstanse.Template = "";
-            }
-
-            return componentInstanse;
         }
 
         internal BibaCompiler _compiler;
         [Ignore]
-        public virtual HtmlNode HtmlElement { get; internal set; }
+        public HtmlNode HtmlElement { get; internal set; }
         [Ignore]
-        public virtual string Template { get; private set; }
-        [Ignore]
-        public string ComponentName
-        {
-            get
-            {
-                return GetType().Name.Replace("Component", "");
-            }
-        }
-
-        public bool _transclude { get; set; } = false;
+        public virtual string Template { get => _template; private set => _template = value; }
 
         public delegate void EmptyDelegate();
         public delegate void BeforePropertiesSet(object sender);
@@ -58,22 +35,10 @@ namespace BibaViewEngine
         protected event EmptyDelegate OnCompileFinish;
         protected event EmptyDelegate OnCompileStart;
 
-        protected event BeforePropertiesSet OnBeforePropertiesSet;
-        protected event EmptyDelegate OnAfterPropertiesSet;
-
         public virtual void InnerCompile() { }
 
-        internal void _InnerCompile()
+        internal string _InnerCompile()
         {
-            if (_transclude)
-            {
-                _compiler.Transclude(this);
-            }
-            else
-            {
-                HtmlElement.InnerHtml = Template;
-            }
-
             if (OnCompileStart != null)
             {
                 OnCompileStart();
@@ -81,7 +46,7 @@ namespace BibaViewEngine
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
-            _compiler.Compile(HtmlElement, this);
+            var compilerResult = _compiler.Compile(_template, this);
 
             _compiler.ClearAttributes(HtmlElement);
 
@@ -91,6 +56,8 @@ namespace BibaViewEngine
             {
                 OnCompileFinish();
             }
+
+            return compilerResult;
         }
     }
 }

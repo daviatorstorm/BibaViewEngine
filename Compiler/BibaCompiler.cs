@@ -10,26 +10,28 @@ using System.Threading.Tasks;
 using System.Collections;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BibaViewEngine.Compiler
 {
     public class BibaCompiler : IDisposable
     {
         private readonly RegistesteredTags _tags;
+        private readonly IServiceProvider _provider;
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
-        private readonly IEnumerable<Type> _registeredComponents;
         private readonly Regex directive = new Regex("\\(\\[([\\w \\+\\.\\\"\\-\\*\\/\\(\\)]+)\\]\\)");
 
         bool disposed = false;
         SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
 
-        public BibaCompiler(RegisteredComponentsCollection components, RegistesteredTags tags)
+        public BibaCompiler(RegistesteredTags tags, IServiceProvider services)
         {
             _ass = Assembly.GetEntryAssembly();
             _doc = new HtmlDocument();
-            _registeredComponents = components.components;
             _tags = tags;
+            _provider = services;
         }
 
         public string StartCompile(string html)
@@ -59,7 +61,7 @@ namespace BibaViewEngine.Compiler
             foreach (var element in extracted)
             {
                 var component = FindComponent(element);
-                var compilerResult = Compile(component, parent);
+                element.InnerHtml = Compile(component, parent);
             }
 
             return _doc.DocumentNode;
@@ -67,12 +69,17 @@ namespace BibaViewEngine.Compiler
 
         public Component FindComponent(HtmlNode node)
         {
-            var component = _registeredComponents.Single(x => x.Name.Replace("Component", "").ToLower() == node.Name);
+            var component = Assembly.GetEntryAssembly().GetTypes()
+                .Single(x => x.Name.ToLower() == $"{node.Name.ToLower()}component");
 
-            return Component.Create(this, node, component);
+            var instance = (Component)_provider.GetRequiredService(component);
+
+            instance.HtmlElement = node;
+
+            return instance;
         }
 
-        public Component Compile(Component child, Component parent = null)
+        public string Compile(Component child, Component parent = null)
         {
             var evalParentProps = Enumerable.Empty<KeyValuePair<string, object>>();
 
@@ -81,13 +88,13 @@ namespace BibaViewEngine.Compiler
                 evalParentProps = GetParentProps(parent);
             }
 
-            var componentAttributes = child.HtmlElement.Attributes
-                .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
-
-            var childProps = child.GetType().GetProperties();
-
             if (evalParentProps.Count() > 0)
             {
+                var componentAttributes = child.HtmlElement.Attributes
+                .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
+
+                var childProps = child.GetType().GetProperties();
+
                 foreach (var attr in componentAttributes)
                 {
                     var childProp = childProps.Single(x => x.Name.ToLower() == attr.Key.ToLower());
@@ -105,18 +112,16 @@ namespace BibaViewEngine.Compiler
                 }
             }
 
-            child._InnerCompile();
-
-            return child;
+            return child._InnerCompile();
         }
 
-        public HtmlNode Compile(HtmlNode node, object context)
+        public string Compile(string template, object context)
         {
-            var matches = directive.Matches(node.InnerHtml)
+            var matches = directive.Matches(template)
                 .OfType<Match>()
                 .Distinct(new EqualityComparer());
 
-            string replacement = node.InnerHtml;
+            string replacement = template;
 
             var eval = Evaluator.Create();
 
@@ -126,9 +131,7 @@ namespace BibaViewEngine.Compiler
                     .Replace(match.Value, eval.Evaluate(match.Groups[1].Value, context));
             }
 
-            node.InnerHtml = replacement;
-
-            return node;
+            return replacement;
         }
 
         public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
