@@ -8,6 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace BibaViewEngine.Router
 {
@@ -52,7 +54,19 @@ namespace BibaViewEngine.Router
         {
             var startComponent = _provider.GetRequiredService<Component>();
 
-            await context.Response.WriteAsync(StartCompile(startComponent));
+            var agregate = _routes.Select(x => new
+            {
+                Path = x.Path,
+                Name = x.Component.Name
+            });
+
+            await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+            {
+                Components = agregate,
+                Html = StartCompile(startComponent),
+            }, new JsonSerializerSettings {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            }));
         }
 
         private async Task ExecuteRouter(string routeName, HttpContext context)

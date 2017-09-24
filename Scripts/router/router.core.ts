@@ -51,11 +51,18 @@ class BibaRouter {
         this.getComponent(componentPath).then(template => {
             this.routerContainer.innerHTML = template;
 
-            history.pushState({}, document.title, componentPath || '/');
+            componentPath = componentPath || '/';
+
+            history.pushState({}, document.title, componentPath);
 
             this.currentRoute = { path: componentPath };
 
-            document.dispatchEvent(new CustomEvent('onRouteFinish', { detail: { currentRoute: this.currentRoute } }));
+            document.dispatchEvent(new CustomEvent('onRouteFinish', {
+                detail: {
+                    currentRoute: this.currentRoute,
+                    element: this.routerContainer
+                }
+            }));
         }).catch(console.error);
 
         return false;
