@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BibaViewEngine.Compiler
 {
-    public class BibaCompiler : IDisposable
+    public sealed class BibaCompiler : IDisposable
     {
         private readonly RegistesteredTags _tags;
         private readonly IServiceProvider _provider;
@@ -38,7 +38,7 @@ namespace BibaViewEngine.Compiler
         {
             _doc.LoadHtml(html);
 
-            return ExecuteCompiler(_doc.DocumentNode).InnerHtml;
+            return ExecuteCompiler(_doc.DocumentNode);
         }
 
         public IList<HtmlNode> ExtractComponents(HtmlNode node)
@@ -55,16 +55,16 @@ namespace BibaViewEngine.Compiler
             return excractedNodes;
         }
 
-        public HtmlNode ExecuteCompiler(HtmlNode node, Component parent = null)
+        public string ExecuteCompiler(HtmlNode node, Component parent = null)
         {
             var extracted = ExtractComponents(node);
             foreach (var element in extracted)
             {
                 var component = FindComponent(element);
-                element.InnerHtml = Compile(component, parent);
+                element.InnerHtml = PassValues(component, parent: parent);
             }
 
-            return _doc.DocumentNode;
+            return node.InnerHtml;
         }
 
         public Component FindComponent(HtmlNode node)
@@ -79,7 +79,7 @@ namespace BibaViewEngine.Compiler
             return instance;
         }
 
-        public string Compile(Component child, Component parent = null)
+        public string PassValues(Component child, Component parent = null)
         {
             var evalParentProps = Enumerable.Empty<KeyValuePair<string, object>>();
 
@@ -91,7 +91,7 @@ namespace BibaViewEngine.Compiler
             if (evalParentProps.Count() > 0)
             {
                 var componentAttributes = child.HtmlElement.Attributes
-                .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
+                    .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
 
                 var childProps = child.GetType().GetProperties();
 
@@ -166,7 +166,7 @@ namespace BibaViewEngine.Compiler
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (disposed) return;
 

@@ -38,7 +38,7 @@ namespace BibaViewEngine
             //     dic.Clear();
             // }
 
-            _compiler.ClearAttributes(HtmlElement);
+            // _compiler.ClearAttributes(HtmlElement);
         }
     }
 }

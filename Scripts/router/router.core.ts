@@ -1,14 +1,10 @@
 class BibaRouter {
     private routerContainer: HTMLElement;
     private noop = () => { };
-    onRouteStart: RouteEvent;
-    onRouteFinish: RouteEvent;
     currentRoute: Route;
 
     constructor() {
-        document.addEventListener('DOMContentLoaded', () => this.initRouterLinks());
-        this.onRouteStart = this.noop;
-        this.onRouteFinish = this.noop;
+        this.initRouterLinks();
     }
 
     private initRouterLinks() {
@@ -27,8 +23,16 @@ class BibaRouter {
         }
 
         if (this.routerContainer) {
-            this.getComponent(location.pathname).then((template: string) => {
+            document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: location.pathname } }));
+
+            let componentPath = location.pathname;
+
+            this.getComponent(componentPath).then((template: string) => {
                 this.routerContainer.innerHTML = template;
+
+                this.currentRoute = { path: componentPath };
+
+                document.dispatchEvent(new CustomEvent('onRouteFinish', { detail: { currentRoute: this.currentRoute } }));
             });
         }
 
@@ -42,7 +46,7 @@ class BibaRouter {
     private routerLinkClickHandler(event: Event) {
         let componentPath = (event.target as any).path;
 
-        this.onRouteStart(this.currentRoute, { path: componentPath }, this);
+        document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: componentPath } }));
 
         this.getComponent(componentPath).then(template => {
             this.routerContainer.innerHTML = template;
@@ -51,7 +55,7 @@ class BibaRouter {
 
             this.currentRoute = { path: componentPath };
 
-            this.onRouteFinish({}, this.currentRoute, this);
+            document.dispatchEvent(new CustomEvent('onRouteFinish', { detail: { currentRoute: this.currentRoute } }));
         }).catch(console.error);
 
         return false;
@@ -75,6 +79,12 @@ class BibaRouter {
             req.send(data || null);
         });
     }
-}
 
-new BibaRouter();
+    onRouteStart(handler: { (args: any): void }) {
+        document.addEventListener('onRouteStart', (args: CustomEvent) => { handler(args.detail) }, false);
+    }
+
+    onRouteFinish(handler: { (args: any): void }) {
+        document.addEventListener('onRouteFinish', (args: CustomEvent) => { handler(args.detail) }, false);
+    }
+}

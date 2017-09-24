@@ -29,7 +29,7 @@ namespace BibaViewEngine.Router
             return null;
         }
 
-        public Task RouteAsync(RouteContext context)
+        public async Task RouteAsync(RouteContext context)
         {
             var routeName = context.RouteData.Values["component"] as string;
 
@@ -38,32 +38,45 @@ namespace BibaViewEngine.Router
                 routeName = string.Empty;
             }
 
-            ExecuteRouter(routeName, context.HttpContext);
-
-            return Task.FromResult(context);
+            if (context.HttpContext.Request.Path == "/app/start")
+            {
+                await ExecuteStart(context.HttpContext);
+            }
+            else
+            {
+                await ExecuteRouter(routeName, context.HttpContext);
+            }
         }
 
-        private void ExecuteRouter(string routeName, HttpContext context)
+        private async Task ExecuteStart(HttpContext context)
+        {
+            var startComponent = _provider.GetRequiredService<Component>();
+
+            await context.Response.WriteAsync(StartCompile(startComponent));
+        }
+
+        private async Task ExecuteRouter(string routeName, HttpContext context)
         {
             var route = _routes.FirstOrDefault(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase));
-
             if (route != null)
             {
                 var component = (Component)_provider.GetRequiredService(route.Component);
 
-                var doc = new HtmlDocument();
-
-                component.HtmlElement = doc.DocumentNode;
-                component.HtmlElement.InnerHtml = component.Template;
-
-                _compiler.Compile(component);
-
-                context.Response.WriteAsync(component.HtmlElement.InnerHtml);
+                await context.Response.WriteAsync(StartCompile(component));
             }
             else
             {
                 context.Response.StatusCode = 404;
             }
+        }
+
+        private string StartCompile(Component component)
+        {
+            var doc = new HtmlDocument();
+            doc.LoadHtml(component.Template);
+
+            component.HtmlElement = doc.DocumentNode;
+            return _compiler.PassValues(component);
         }
     }
 }

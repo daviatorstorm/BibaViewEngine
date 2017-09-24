@@ -1,13 +1,12 @@
 # BibaViewEngine
 ## Aspnet core view engine
 
-Now Biba view engine is live: https://test-aspnet-core.herokuapp.com/
-
 ## Overview
 
-Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple have some similarness with angularjs and/or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works.
+Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple have some similarness with angularjs or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works.
 
 > Currently it is working with netcoreapp1.1, SDK 1.0.3 / 1.0.4
+> Updated to netcoreapp2.0 and SDK 2.0.0
 
 ## Docs
 

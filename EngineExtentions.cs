@@ -33,7 +33,7 @@ namespace BibaViewEngine
             var resource = engineAss.GetManifestResourceNames();
             using (var stream = engineAss.GetManifestResourceStream(resource[0]))
             {
-                stream.Position = 0;
+                stream.Seek(0, SeekOrigin.Begin);
                 using (var file = File.Create(Path.Combine(applicationRoot, props.ContentRoot, "biba.min.js")))
                 {
                     stream.CopyTo(file);
@@ -41,7 +41,8 @@ namespace BibaViewEngine
             }
 
             var builtRouter = new RouteBuilder(app, router)
-                .MapRoute("Get component", "c/{component?}")
+                .MapRoute("Start", "app/start")
+                .MapRoute("Get component", "c/{*component}")
                 .Build();
 
             app.UseRouter(builtRouter);
@@ -51,11 +52,9 @@ namespace BibaViewEngine
             return app;
         }
 
-        public static IServiceCollection AddBibaViewEngine(this IServiceCollection services, Routes routes = null, BibaViewEngineProperties props = null)
+        public static IServiceCollection AddBibaViewEngine<EntryComponent>(this IServiceCollection services, 
+            Routes routes = null, BibaViewEngineProperties props = null) where EntryComponent : Component
         {
-            var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
-            var workingAss = Assembly.GetEntryAssembly();
-
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
             tags = tags.Concat(new string[] { "#text", "#comment" });
             Routes outRoutes;
@@ -65,7 +64,15 @@ namespace BibaViewEngine
                 props = new BibaViewEngineProperties();
             }
 
+            var components = Assembly.Load("BibaViewEngine").GetTypes().Where(x => x.BaseType == typeof(Component))
+                .Concat(Assembly.GetEntryAssembly().GetTypes().Where(x => x.BaseType == typeof(Component)));
+
             InitRoutes(out outRoutes, routes);
+
+            foreach (var component in components)
+            {
+                services.AddTransient(component);
+            }
 
             services.AddRouting();
 
@@ -73,9 +80,9 @@ namespace BibaViewEngine
             services.AddSingleton(props);
             services.AddSingleton<BibaViewEngineProperties>();
             services.AddSingleton(new RegistesteredTags(tags));
-            services.AddTransient<IBibaRouter, BibaRouter>();
             services.AddTransient<BibaCompiler>();
-            services.AddTransient<ForComponent>();
+            services.AddTransient<IBibaRouter, BibaRouter>();
+            services.AddTransient<Component, EntryComponent>();
 
             return services;
         }

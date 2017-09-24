@@ -10,6 +10,7 @@ namespace BibaViewEngine
     public abstract class Component
     {
         private string _template;
+        private readonly BibaCompiler _compiler;
         public Component(BibaCompiler bibaCompiler)
         {
             _compiler = bibaCompiler;
@@ -23,11 +24,10 @@ namespace BibaViewEngine
             }
         }
 
-        internal BibaCompiler _compiler;
         [Ignore]
         public HtmlNode HtmlElement { get; internal set; }
         [Ignore]
-        public virtual string Template { get => _template; private set => _template = value; }
+        public virtual string Template { get => _template; set => _template = value; }
 
         public delegate void EmptyDelegate();
         public delegate void BeforePropertiesSet(object sender);
