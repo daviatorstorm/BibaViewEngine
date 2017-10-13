@@ -11,8 +11,7 @@ class Biba {
     private constructor(mainComponent: ViewController) {
         this.router = new BibaRouter();
         this.router.onRouteFinish((args) => {
-            var controller = Biba._get(args.currentRoute.path);
-            this.activatedController = new controller(args.element);
+            this.activatedController = Biba.activateController(args.currentRoute.path, args.element);
         });
         this.glboalController = mainComponent;
     }
@@ -25,8 +24,7 @@ class Biba {
         xhr.onloadend = (res: any) => {
             var data = JSON.parse(res.target.response);
             mainElement.innerHTML = data.html;
-            var controller = Biba._get('*');
-            new Biba(new controller(mainElement));
+            new Biba(Biba.activateController('*', mainElement));
         };
         xhr.send();
     }
@@ -37,6 +35,15 @@ class Biba {
 
     private static _get(name: string) {
         return Biba._cache[name] as any;
+    }
+
+    private static activateController(path: string, el: Element) {
+        var controller = Biba._get(path);
+        var instance;
+        if (controller) {
+            instance = new controller(el);
+        }
+        return instance;
     }
 }
 

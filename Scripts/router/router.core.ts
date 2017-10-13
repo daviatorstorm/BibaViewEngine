@@ -1,6 +1,5 @@
 class BibaRouter {
     private routerContainer: HTMLElement;
-    private noop = () => { };
     currentRoute: Route;
 
     constructor() {
@@ -25,7 +24,7 @@ class BibaRouter {
         if (this.routerContainer) {
             document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: location.pathname } }));
 
-            let componentPath = location.pathname;
+            var componentPath = location.pathname;
 
             this.getComponent(componentPath).then((template: string) => {
                 this.routerContainer.innerHTML = template;
@@ -44,7 +43,7 @@ class BibaRouter {
     }
 
     private routerLinkClickHandler(event: Event) {
-        let componentPath = (event.target as any).path;
+        var componentPath = (event.target as any).path;
 
         document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: componentPath } }));
 
@@ -70,8 +69,8 @@ class BibaRouter {
 
     getComponent(path: string, data?: any): Promise<string> {
         return new Promise((resolve, reject) => {
-            let req = new XMLHttpRequest();
-            let newPath = `c/${path}`.replace('//', '/')
+            var req = new XMLHttpRequest();
+            var newPath = `c/${path}`.replace('//', '/')
 
             req.open('POST', newPath, true);
 
