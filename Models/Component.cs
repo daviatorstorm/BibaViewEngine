@@ -9,7 +9,7 @@ namespace BibaViewEngine
 {
     public abstract class Component
     {
-        private string _template;
+        private HtmlNode _htmlElement;
         private readonly BibaCompiler _compiler;
         public Component(BibaCompiler bibaCompiler)
         {
@@ -20,14 +20,14 @@ namespace BibaViewEngine
 
             using (var stream = File.OpenText(fileLocation))
             {
-                _template = stream.ReadToEnd();
+                Template = stream.ReadToEnd();
             }
         }
 
         [Ignore]
-        public HtmlNode HtmlElement { get; internal set; }
+        public HtmlNode HtmlElement { get => _htmlElement; internal set { _htmlElement = value; _htmlElement.InnerHtml = Template; } }
         [Ignore]
-        public virtual string Template { get => _template; set => _template = value; }
+        public virtual string Template { get; set; }
 
         public delegate void EmptyDelegate();
         public delegate void BeforePropertiesSet(object sender);
@@ -46,7 +46,7 @@ namespace BibaViewEngine
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
-            var compilerResult = _compiler.Compile(_template, this);
+            var compilerResult = _compiler.Compile(HtmlElement.InnerHtml, this);
 
             _compiler.ClearAttributes(HtmlElement);
 
