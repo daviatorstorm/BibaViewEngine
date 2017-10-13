@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <Version>0.0.1</Version>
-    <Description>Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple have some similarness with angularjs and/or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works.
+    <Description>Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple and have some similarness with angularjs and/or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works.
 
 Enjoy using engine :)</Description>
     <AssemblyVersion>0.0.0.1</AssemblyVersion>
