@@ -1,11 +1,16 @@
 using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
+using BibaViewEngine.Compiler;
 
 namespace BibaViewEngine
 {
     public class ForComponent : Component
     {
+        public ForComponent(BibaCompiler bibaCompiler) : base(bibaCompiler)
+        {
+        }
+
         public IEnumerable<object> Source { get; set; }
         public string Iter { get; set; }
         public string Element { get; set; }
@@ -22,17 +27,18 @@ namespace BibaViewEngine
             var innerHtml = HtmlElement.InnerHtml;
             HtmlElement.InnerHtml = string.Empty;
             
-            foreach (var item in Source)
-            {
-                var newNode = tmpDoc.CreateElement(Element);
-                newNode.InnerHtml = innerHtml;
-                dic[Iter] = item;
-                var compiledHtml = _compiler.Compile(newNode, dic);
-                HtmlElement.AppendChild(compiledHtml);
-                dic.Clear();
-            }
+            // TODO: Return here
+            // foreach (var item in Source)
+            // {
+            //     var newNode = tmpDoc.CreateElement(Element);
+            //     newNode.InnerHtml = innerHtml;
+            //     dic[Iter] = item;
+            //     var compiledHtml = _compiler.Compile(newNode, dic);
+            //     HtmlElement.AppendChild(compiledHtml);
+            //     dic.Clear();
+            // }
 
-            _compiler.ClearAttributes(HtmlElement);
+            // _compiler.ClearAttributes(HtmlElement);
         }
     }
 }

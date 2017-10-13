@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -6,31 +6,39 @@ using System.Collections.Generic;
 using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
 using BibaViewEngine.Models;
-using Microsoft.CodeAnalysis.CSharp.Scripting; // Will potantialy used
+using System.Threading.Tasks;
+using System.Collections;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BibaViewEngine.Compiler
 {
-    public class BibaCompiler
+    public sealed class BibaCompiler : IDisposable
     {
         private readonly RegistesteredTags _tags;
+        private readonly IServiceProvider _provider;
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
-        private readonly IEnumerable<Type> _registeredComponents;
-        private readonly Regex directive = new Regex("\\(\\[([\\w]+)\\]\\)");
+        private readonly Regex directive = new Regex("\\(\\[([\\w \\+\\.\\\"\\-\\*\\/\\(\\)]+)\\]\\)");
 
-        public BibaCompiler(RegisteredComponentsCollection components, RegistesteredTags tags)
+        bool disposed = false;
+        SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
+
+        public BibaCompiler(RegistesteredTags tags, IServiceProvider services)
         {
             _ass = Assembly.GetEntryAssembly();
             _doc = new HtmlDocument();
-            _registeredComponents = components.components;
             _tags = tags;
+            _provider = services;
         }
 
         public string StartCompile(string html)
         {
             _doc.LoadHtml(html);
 
-            return ExecuteCompiler(_doc.DocumentNode).InnerHtml;
+            return ExecuteCompiler(_doc.DocumentNode);
         }
 
         public IList<HtmlNode> ExtractComponents(HtmlNode node)
@@ -47,32 +55,31 @@ namespace BibaViewEngine.Compiler
             return excractedNodes;
         }
 
-        public HtmlNode ExecuteCompiler(HtmlNode node, Component parent = null)
+        public string ExecuteCompiler(HtmlNode node, Component parent = null)
         {
             var extracted = ExtractComponents(node);
             foreach (var element in extracted)
             {
                 var component = FindComponent(element);
-                var compilerResult = Compile(component, parent);
+                element.InnerHtml = PassValues(component, parent: parent);
             }
 
-            return _doc.DocumentNode;
+            return node.InnerHtml;
         }
 
         public Component FindComponent(HtmlNode node)
         {
-            var components = _registeredComponents.Concat(_ass.GetTypes().Where(x => x.GetTypeInfo().BaseType == typeof(Component)));
-            var component = components.Single(x => x.Name.Replace("Component", "").ToLower() == node.Name);
+            var component = Assembly.GetEntryAssembly().GetTypes()
+                .Single(x => x.Name.ToLower() == $"{node.Name.ToLower()}component");
 
-            var componentInstance = Activator.CreateInstance(component) as Component;
+            var instance = (Component)_provider.GetRequiredService(component);
 
-            componentInstance._compiler = this;
-            componentInstance.HtmlElement = node;
+            instance.HtmlElement = node;
 
-            return componentInstance;
+            return instance;
         }
 
-        public Component Compile(Component child, Component parent = null)
+        public string PassValues(Component child, Component parent = null)
         {
             var evalParentProps = Enumerable.Empty<KeyValuePair<string, object>>();
 
@@ -81,13 +88,13 @@ namespace BibaViewEngine.Compiler
                 evalParentProps = GetParentProps(parent);
             }
 
-            var componentAttributes = child.HtmlElement.Attributes
-                .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
-
-            var childProps = child.GetType().GetProperties();
-
             if (evalParentProps.Count() > 0)
             {
+                var componentAttributes = child.HtmlElement.Attributes
+                    .Select(x => new KeyValuePair<string, object>(x.Name, x.Value));
+
+                var childProps = child.GetType().GetProperties();
+
                 foreach (var attr in componentAttributes)
                 {
                     var childProp = childProps.Single(x => x.Name.ToLower() == attr.Key.ToLower());
@@ -105,29 +112,26 @@ namespace BibaViewEngine.Compiler
                 }
             }
 
-            child.InnerCompile();
-
-            return child;
+            return child._InnerCompile();
         }
 
-        public HtmlNode Compile(HtmlNode node, object context)
+        public string Compile(string template, object context)
         {
-            var newContext = context.ToDictionary();
-            var matches = directive.Matches(node.InnerHtml);
+            var matches = directive.Matches(template)
+                .OfType<Match>()
+                .Distinct(new EqualityComparer());
+
+            string replacement = template;
+
+            var eval = Evaluator.Create();
 
             foreach (Match match in matches)
             {
-                var itemName = match.Groups[1].Value;
-                var matchValue = match.Value;
-                object propValue;
-                if (!newContext.TryGetValue(itemName, out propValue))
-                {
-                    propValue = null;
-                }
-                node.InnerHtml = node.InnerHtml.Replace(matchValue, propValue as string);
+                replacement = replacement
+                    .Replace(match.Value, eval.Evaluate(match.Groups[1].Value, context));
             }
 
-            return node;
+            return replacement;
         }
 
         public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
@@ -155,20 +159,36 @@ namespace BibaViewEngine.Compiler
 
             component.HtmlElement.InnerHtml = Regex.Replace(component.Template, "<\\s*template\\s*\\/>", component.HtmlElement.InnerHtml);
         }
-    }
 
-    static class Extentions
-    {
-        public static Dictionary<string, object> ToDictionary(this object source)
+        public void Dispose()
         {
-            Dictionary<string, object> result = new Dictionary<string, object>();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-            if (source is Dictionary<string, object>)
+        private void Dispose(bool disposing)
+        {
+            if (disposed) return;
+
+            if (disposing)
             {
-                return source as Dictionary<string, object>;
+                handle.Dispose();
             }
 
-            return source.GetType().GetProperties().ToDictionary(x => x.Name.ToLower(), x => x.GetValue(source));
+            disposed = true;
+        }
+    }
+
+    public class EqualityComparer : IEqualityComparer<Match>
+    {
+        public bool Equals(Match x, Match y)
+        {
+            return x.Value == y.Value;
+        }
+
+        public int GetHashCode(Match obj)
+        {
+            return obj.Value.GetHashCode();
         }
     }
 }

@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Routing;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace BibaViewEngine.Router
 {
@@ -13,11 +17,13 @@ namespace BibaViewEngine.Router
     {
         private readonly Routes _routes;
         private readonly BibaCompiler _compiler;
+        private readonly IServiceProvider _provider;
 
-        public BibaRouter(Routes routes, BibaCompiler compiler)
+        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider services)
         {
             _routes = routes;
             _compiler = compiler;
+            _provider = services;
         }
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
@@ -25,34 +31,66 @@ namespace BibaViewEngine.Router
             return null;
         }
 
-        public Task RouteAsync(RouteContext context)
+        public async Task RouteAsync(RouteContext context)
         {
             var routeName = context.RouteData.Values["component"] as string;
 
-            if(routeName == null)
+            if (routeName == null)
             {
                 routeName = string.Empty;
             }
 
-            ExecuteRouter(routeName, context.HttpContext);
-
-            return Task.FromResult(context);
+            if (context.HttpContext.Request.Path == "/app/start")
+            {
+                await ExecuteStart(context.HttpContext);
+            }
+            else
+            {
+                await ExecuteRouter(routeName, context.HttpContext);
+            }
         }
 
-        private void ExecuteRouter(string routeName, HttpContext context)
+        private async Task ExecuteStart(HttpContext context)
         {
-            var component = Activator.CreateInstance(_routes.First(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase)).Component) as Component;
+            var startComponent = _provider.GetRequiredService<Component>();
 
+            var agregate = _routes.Select(x => new
+            {
+                Path = x.Path,
+                Name = x.Component.Name
+            });
+
+            await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+            {
+                Components = agregate,
+                Html = StartCompile(startComponent),
+            }, new JsonSerializerSettings {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            }));
+        }
+
+        private async Task ExecuteRouter(string routeName, HttpContext context)
+        {
+            var route = _routes.FirstOrDefault(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase));
+            if (route != null)
+            {
+                var component = (Component)_provider.GetRequiredService(route.Component);
+
+                await context.Response.WriteAsync(StartCompile(component));
+            }
+            else
+            {
+                context.Response.StatusCode = 404;
+            }
+        }
+
+        private string StartCompile(Component component)
+        {
             var doc = new HtmlDocument();
             doc.LoadHtml(component.Template);
 
             component.HtmlElement = doc.DocumentNode;
-
-            component._compiler = _compiler;
-
-            _compiler.Compile(component);
-
-            context.Response.WriteAsync(component.HtmlElement.InnerHtml);
+            return _compiler.PassValues(component);
         }
     }
 }

@@ -10,5 +10,10 @@ namespace BibaViewEngine.Models
 
         public IEnumerable<HtmlAttribute> Attributes { get; set; }
         public IEnumerable<HtmlElement> Children { get; set; }
+
+        public HtmlElement()
+        {
+
+        }
     }
 }

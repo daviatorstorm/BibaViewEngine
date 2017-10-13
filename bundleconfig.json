@@ -1,0 +1,12 @@
+[
+    {
+        "outputFileName": "build/biba.js",
+        "inputFiles": [
+          "Scripts/**/*.js"
+        ],
+        "minify": {
+            "enabled": true,
+            "renameLocals": true
+        }
+    }
+]

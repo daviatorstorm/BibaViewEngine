@@ -1,4 +1,4 @@
-﻿using BibaViewEngine.Interfaces;
+using BibaViewEngine.Interfaces;
 using System.Collections.Generic;
 
 namespace BibaViewEngine.Models
@@ -6,7 +6,7 @@ namespace BibaViewEngine.Models
     public class BibaViewEngineProperties
     {
         public string IndexHtml { get; set; } = "wwwroot/index.html";
-        public string IndexHtmlBuild { get; set; } = "wwwroot/index.build.html";
+        public string ContentRoot { get; set; } = "wwwroot";
 
         public IEnumerable<IRoute> Routes { get; set; }
     }

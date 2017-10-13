@@ -1,68 +1,63 @@
-﻿using BibaViewEngine.Models;
 using BibaViewEngine.Compiler;
 using HtmlAgilityPack;
 using System.IO;
 using System.Linq;
 using BibaViewEngine.Attributes;
+using System;
 
 namespace BibaViewEngine
 {
-    public class Component
+    public abstract class Component
     {
-        public Component()
+        private string _template;
+        private readonly BibaCompiler _compiler;
+        public Component(BibaCompiler bibaCompiler)
         {
-            try
-            {
-                var fileLocation = Directory.GetFiles("Client", "*.html", SearchOption.AllDirectories)
-                   .Single(x => Path.GetFileNameWithoutExtension(x) == GetType().Name);
+            _compiler = bibaCompiler;
 
-                Template = File.ReadAllText(fileLocation);
-            }
-            catch
+            var fileLocation = Directory.GetFiles("Client", $"{GetType().Name}.html",
+                                        SearchOption.AllDirectories).Single();
+
+            using (var stream = File.OpenText(fileLocation))
             {
-                Template = "";
+                _template = stream.ReadToEnd();
             }
         }
 
-        public BibaCompiler _compiler;
         [Ignore]
         public HtmlNode HtmlElement { get; internal set; }
         [Ignore]
-        public string Template { get; private set; }
-        [Ignore]
-        public string ComponentName
+        public virtual string Template { get => _template; set => _template = value; }
+
+        public delegate void EmptyDelegate();
+        public delegate void BeforePropertiesSet(object sender);
+
+        protected event EmptyDelegate OnCompileFinish;
+        protected event EmptyDelegate OnCompileStart;
+
+        public virtual void InnerCompile() { }
+
+        internal string _InnerCompile()
         {
-            get
+            if (OnCompileStart != null)
             {
-                return GetType().Name;
-            }
-        }
-
-        public bool _transclude { get; set; } = false;
-        public bool _compileTemplate { get; set; } = true;
-
-        public delegate void CompileComplete(HtmlElement element);
-        public delegate void CompileStart(HtmlElement element);
-
-        public event CompileComplete OnCompileComplete;
-        public event CompileStart OnCompileStart;
-
-        public virtual void InnerCompile()
-        {
-            if (_transclude)
-            {
-                _compiler.Transclude(this);
-            }
-            else
-            {
-                HtmlElement.InnerHtml = Template;
+                OnCompileStart();
             }
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
-            _compiler.Compile(HtmlElement, this);
+            var compilerResult = _compiler.Compile(_template, this);
 
             _compiler.ClearAttributes(HtmlElement);
+
+            InnerCompile();
+
+            if (OnCompileFinish != null)
+            {
+                OnCompileFinish();
+            }
+
+            return compilerResult;
         }
     }
 }

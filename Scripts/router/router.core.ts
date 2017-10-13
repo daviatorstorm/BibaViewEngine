@@ -1,45 +1,38 @@
 class BibaRouter {
     private routerContainer: HTMLElement;
     private noop = () => { };
-    onRouteStart: RouteEvent;
-    onRouteFinish: RouteEvent;
     currentRoute: Route;
 
     constructor() {
-        document.addEventListener('DOMContentLoaded', () => this.initRouterLinks());
-        this.onRouteStart = this.noop;
-        this.onRouteFinish = this.noop;
+        this.initRouterLinks();
     }
 
     private initRouterLinks() {
-        var routerLinks: HTMLElement[] = [];
         var allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
 
         for (var item of allElements) {
-            var attr = item.attributes.getNamedItem('router-path');
+            let attr = item.attributes.getNamedItem('router-path');
             if (attr) {
-                routerLinks.push(item);
+                (item as any).path = item.attributes.getNamedItem('router-path').value;
+                item.attributes.removeNamedItem('router-path');
+                this.giveAnchorHandler(item);
             } else if (item.attributes.getNamedItem('router-container')) {
                 this.routerContainer = item;
                 this.routerContainer.attributes.removeNamedItem('router-container');
             }
         }
 
-        for (var routerLink of routerLinks) {
-            var newLinkContainer = document.createElement('a');
-            newLinkContainer.innerHTML = routerLink.innerHTML;
-
-            newLinkContainer.href = routerLink.attributes.getNamedItem('router-path').value;
-
-            this.giveAnchorHandler(newLinkContainer);
-
-            routerLink.parentElement.insertBefore(newLinkContainer, routerLink);
-            routerLink.parentElement.removeChild(routerLink);
-        }
-
         if (this.routerContainer) {
-            this.getComponent(location.pathname).then((template: string) => {
+            document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: location.pathname } }));
+
+            let componentPath = location.pathname;
+
+            this.getComponent(componentPath).then((template: string) => {
                 this.routerContainer.innerHTML = template;
+
+                this.currentRoute = { path: componentPath };
+
+                document.dispatchEvent(new CustomEvent('onRouteFinish', { detail: { currentRoute: this.currentRoute } }));
             });
         }
 
@@ -51,18 +44,25 @@ class BibaRouter {
     }
 
     private routerLinkClickHandler(event: Event) {
-        let componentPath = (event.target as HTMLAnchorElement).attributes.getNamedItem('href').value;
+        let componentPath = (event.target as any).path;
 
-        this.onRouteStart(this.currentRoute, { path: componentPath }, this);
+        document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: componentPath } }));
 
         this.getComponent(componentPath).then(template => {
             this.routerContainer.innerHTML = template;
+
+            componentPath = componentPath || '/';
 
             history.pushState({}, document.title, componentPath);
 
             this.currentRoute = { path: componentPath };
 
-            this.onRouteFinish({}, this.currentRoute, this);
+            document.dispatchEvent(new CustomEvent('onRouteFinish', {
+                detail: {
+                    currentRoute: this.currentRoute,
+                    element: this.routerContainer
+                }
+            }));
         }).catch(console.error);
 
         return false;
@@ -86,6 +86,12 @@ class BibaRouter {
             req.send(data || null);
         });
     }
-}
 
-new BibaRouter();
+    onRouteStart(handler: { (args: any): void }) {
+        document.addEventListener('onRouteStart', (args: CustomEvent) => { handler(args.detail) }, false);
+    }
+
+    onRouteFinish(handler: { (args: any): void }) {
+        document.addEventListener('onRouteFinish', (args: CustomEvent) => { handler(args.detail) }, false);
+    }
+}
