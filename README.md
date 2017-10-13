@@ -24,7 +24,7 @@ First you need to add Nuget.config file to the root project directory with the n
 
 Then add package reference to csproj file
 
-`<PackageReference Include="BibaViewEngine" Version="0.0.3" />`
+`<PackageReference Include="BibaViewEngine" Version="0.0.4" />`
 
 Restore packages
 
