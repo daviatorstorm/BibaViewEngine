@@ -19,6 +19,9 @@ namespace BibaViewEngine.Compiler
     {
         private readonly RegistesteredTags _tags;
         private readonly IServiceProvider _provider;
+
+        private readonly ComponentTypes _types;
+
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
         private readonly Regex directive = new Regex("\\(\\[([\\w \\+\\.\\\"\\-\\*\\/\\(\\)]+)\\]\\)");
@@ -26,12 +29,13 @@ namespace BibaViewEngine.Compiler
         bool disposed = false;
         SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
 
-        public BibaCompiler(RegistesteredTags tags, IServiceProvider services)
+        public BibaCompiler(RegistesteredTags tags, IServiceProvider services, ComponentTypes types)
         {
             _ass = Assembly.GetEntryAssembly();
             _doc = new HtmlDocument();
             _tags = tags;
             _provider = services;
+            _types = types;
         }
 
         public string StartCompile(string html)
@@ -69,8 +73,7 @@ namespace BibaViewEngine.Compiler
 
         public Component FindComponent(HtmlNode node)
         {
-            var component = Assembly.GetEntryAssembly().GetTypes()
-                .Single(x => x.Name.ToLower() == $"{node.Name.ToLower()}component");
+            var component = _types.Single(x => x.Name.ToLower() == $"{node.Name.ToLower()}component");
 
             var instance = (Component)_provider.GetRequiredService(component);
 
@@ -115,7 +118,7 @@ namespace BibaViewEngine.Compiler
             return child._InnerCompile();
         }
 
-        public string Compile(string template, object context)
+        public string Compile(string template, object context, Evaluator evaluator = null)
         {
             var matches = directive.Matches(template)
                 .OfType<Match>()
@@ -123,12 +126,12 @@ namespace BibaViewEngine.Compiler
 
             string replacement = template;
 
-            var eval = Evaluator.Create();
+            var eval = evaluator ?? Evaluator.Create();
 
             foreach (Match match in matches)
             {
                 replacement = replacement
-                    .Replace(match.Value, eval.Evaluate(match.Groups[1].Value, context));
+                    .Replace(match.Value, eval.Evaluate(match.Groups[1].Value.Trim(), context));
             }
 
             return replacement;

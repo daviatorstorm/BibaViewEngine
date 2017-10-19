@@ -21,7 +21,7 @@ namespace BibaViewEngine.Compiler
             {
                 var property = currentType.GetProperty(propertyName);
                 context = property.GetValue(context, null);
-                currentType = property.PropertyType;
+                currentType = context.GetType();
             }
 
             return context?.ToString() ?? string.Empty;

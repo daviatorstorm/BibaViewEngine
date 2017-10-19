@@ -10,24 +10,27 @@ namespace BibaViewEngine
     public abstract class Component
     {
         private HtmlNode _htmlElement;
-        private readonly BibaCompiler _compiler;
+        protected readonly BibaCompiler _compiler;
         public Component(BibaCompiler bibaCompiler)
         {
             _compiler = bibaCompiler;
 
             var fileLocation = Directory.GetFiles("Client", $"{GetType().Name}.html",
-                                        SearchOption.AllDirectories).Single();
+                                        SearchOption.AllDirectories).FirstOrDefault();
 
-            using (var stream = File.OpenText(fileLocation))
-            {
-                Template = stream.ReadToEnd();
-            }
+            if (fileLocation != null)
+                using (var stream = File.OpenText(fileLocation))
+                {
+                    Template = stream.ReadToEnd();
+                }
         }
 
         [Ignore]
-        public HtmlNode HtmlElement { get => _htmlElement; internal set { _htmlElement = value; _htmlElement.InnerHtml = Template; } }
+        public HtmlNode HtmlElement { get => _htmlElement; internal set { _htmlElement = value; if (!string.IsNullOrWhiteSpace(Template)) _htmlElement.InnerHtml = Template; } }
         [Ignore]
         public virtual string Template { get; set; }
+        [Ignore]
+        protected bool PreventDefaults { get; set; } = false;
 
         public delegate void EmptyDelegate();
         public delegate void BeforePropertiesSet(object sender);
@@ -35,7 +38,7 @@ namespace BibaViewEngine
         protected event EmptyDelegate OnCompileFinish;
         protected event EmptyDelegate OnCompileStart;
 
-        public virtual void InnerCompile() { }
+        public virtual string InnerCompile() { return string.Empty; }
 
         internal string _InnerCompile()
         {
@@ -46,11 +49,9 @@ namespace BibaViewEngine
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
-            var compilerResult = _compiler.Compile(HtmlElement.InnerHtml, this);
+            var compilerResult = PreventDefaults ? InnerCompile() : _compiler.Compile(HtmlElement.InnerHtml, this);
 
             _compiler.ClearAttributes(HtmlElement);
-
-            InnerCompile();
 
             if (OnCompileFinish != null)
             {

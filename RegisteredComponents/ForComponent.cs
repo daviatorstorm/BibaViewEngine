@@ -2,43 +2,41 @@ using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using BibaViewEngine.Compiler;
+using BibaViewEngine.Attributes;
 
 namespace BibaViewEngine
 {
     public class ForComponent : Component
     {
-        public ForComponent(BibaCompiler bibaCompiler) : base(bibaCompiler)
+        public ForComponent(BibaCompiler bibaCompiler)
+            : base(bibaCompiler)
         {
+            PreventDefaults = true;
         }
 
+        [Input]
         public IEnumerable<object> Source { get; set; }
-        public string Iter { get; set; }
-        public string Element { get; set; }
+        public object _Item { get; set; }
+        public int _Index { get; set; }
 
-        public override void InnerCompile()
+        public override string InnerCompile()
         {
-            if (Iter == null || Element == null)
+            var replacement = string.Empty;
+
+            if (Source != null)
             {
-                throw new Exception("Iter and Element cannot be empty");
+                var evaluator = Evaluator.Create();
+                var index = 0;
+
+                foreach (var item in Source)
+                {
+                    _Item = item;
+                    _Index = ++index;
+                    replacement += _compiler.Compile(HtmlElement.InnerHtml, new { _Item, _Index }, evaluator);
+                }
             }
 
-            var dic = new Dictionary<string, object>();
-            var tmpDoc = new HtmlDocument();
-            var innerHtml = HtmlElement.InnerHtml;
-            HtmlElement.InnerHtml = string.Empty;
-            
-            // TODO: Return here
-            // foreach (var item in Source)
-            // {
-            //     var newNode = tmpDoc.CreateElement(Element);
-            //     newNode.InnerHtml = innerHtml;
-            //     dic[Iter] = item;
-            //     var compiledHtml = _compiler.Compile(newNode, dic);
-            //     HtmlElement.AppendChild(compiledHtml);
-            //     dic.Clear();
-            // }
-
-            // _compiler.ClearAttributes(HtmlElement);
+            return replacement;
         }
     }
 }
