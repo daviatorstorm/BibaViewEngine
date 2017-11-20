@@ -11,3 +11,5 @@ bin/
 build/
 
 Scripts/**/*.js
+
+types/

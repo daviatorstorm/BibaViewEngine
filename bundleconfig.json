@@ -8,5 +8,11 @@
             "enabled": true,
             "renameLocals": true
         }
+    },
+    {
+        "outputFileName": "build/types.d.ts",
+        "inputFiles": [
+          "types/**/*.d.ts"
+        ]
     }
 ]

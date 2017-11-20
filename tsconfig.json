@@ -1,4 +1,8 @@
 {
+  "exclude": [
+    "types",
+    "build"
+  ],
   "compilerOptions": {
     "removeComments": false,
     "target": "es5",
@@ -6,6 +10,8 @@
       "es2015",
       "es2015.promise",
       "dom"
-    ]
+    ],
+    "declaration": true,
+    "declarationDir": "types"
   }
 }

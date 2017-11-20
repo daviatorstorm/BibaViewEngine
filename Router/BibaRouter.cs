@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using BibaViewEngine.Models;
+using System.Collections.Generic;
 
 namespace BibaViewEngine.Router
 {
@@ -18,12 +20,14 @@ namespace BibaViewEngine.Router
         private readonly Routes _routes;
         private readonly BibaCompiler _compiler;
         private readonly IServiceProvider _provider;
+        private readonly RouterData _data;
 
-        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider services)
+        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider services, RouterData data)
         {
             _routes = routes;
             _compiler = compiler;
             _provider = services;
+            _data = data;
         }
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
@@ -33,12 +37,7 @@ namespace BibaViewEngine.Router
 
         public async Task RouteAsync(RouteContext context)
         {
-            var routeName = context.RouteData.Values["component"] as string;
-
-            if (routeName == null)
-            {
-                routeName = string.Empty;
-            }
+            _data.SetRouterData((IDictionary<string, object>)context.RouteData.Values);
 
             if (context.HttpContext.Request.Path == "/app/start")
             {
@@ -46,7 +45,7 @@ namespace BibaViewEngine.Router
             }
             else
             {
-                await ExecuteRouter(routeName, context.HttpContext);
+                await ExecuteRouter(context);
             }
         }
 
@@ -64,23 +63,25 @@ namespace BibaViewEngine.Router
             {
                 Components = agregate,
                 Html = StartCompile(startComponent),
-            }, new JsonSerializerSettings {
+            }, new JsonSerializerSettings
+            {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             }));
         }
 
-        private async Task ExecuteRouter(string routeName, HttpContext context)
+        private async Task ExecuteRouter(RouteContext context)
         {
-            var route = _routes.FirstOrDefault(x => x.Path.Equals(routeName, StringComparison.OrdinalIgnoreCase));
+            var originalRoute = context.RouteData.Routers.First(x => x is Route) as Route;
+            var route = _routes.FirstOrDefault(x => x.Path.Equals(originalRoute.Name, StringComparison.OrdinalIgnoreCase));
             if (route != null)
             {
                 var component = (Component)_provider.GetRequiredService(route.Component);
 
-                await context.Response.WriteAsync(StartCompile(component));
+                await context.HttpContext.Response.WriteAsync(StartCompile(component));
             }
             else
             {
-                context.Response.StatusCode = 404;
+                context.HttpContext.Response.StatusCode = 404;
             }
         }
 

@@ -7,7 +7,6 @@ namespace BibaViewEngine.Models
     {
         public string IndexHtml { get; set; } = "wwwroot/index.html";
         public string ContentRoot { get; set; } = "wwwroot";
-
-        public IEnumerable<IRoute> Routes { get; set; }
+        public string LibRoot { get; set; } = "wwwroot";
     }
 }

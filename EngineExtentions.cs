@@ -27,23 +27,33 @@ namespace BibaViewEngine
         public static IApplicationBuilder UseBibaViewEngine(this IApplicationBuilder app)
         {
             var router = app.ApplicationServices.GetRequiredService<IBibaRouter>();
+            var routes = app.ApplicationServices.GetRequiredService<Routes>();
             var props = app.ApplicationServices.GetRequiredService<BibaViewEngineProperties>();
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
             var applicationRoot = Directory.GetCurrentDirectory();
-            var resource = engineAss.GetManifestResourceNames();
-            using (var stream = engineAss.GetManifestResourceStream(resource[0]))
+            var resources = engineAss.GetManifestResourceNames();
+            foreach (var item in resources)
             {
-                stream.Seek(0, SeekOrigin.Begin);
-                using (var file = File.Create(Path.Combine(applicationRoot, props.ContentRoot, "biba.min.js")))
+                var resourceItem = item.Replace("BibaViewEngine.build.", string.Empty);
+                using (var stream = engineAss.GetManifestResourceStream(item))
                 {
-                    stream.CopyTo(file);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    using (var file = File.Create(Path.Combine(props.LibRoot, resourceItem)))
+                    {
+                        stream.CopyTo(file);
+                    }
                 }
             }
 
-            var builtRouter = new RouteBuilder(app, router)
-                .MapRoute("Start", "app/start")
-                .MapRoute("Get component", "c/{*component}")
-                .Build();
+            var routerBuilder = new RouteBuilder(app, router)
+                .MapRoute("Start", "app/start");
+
+            foreach (var route in routes)
+            {
+                routerBuilder.MapRoute(route.Path, "c/" + route.Path);
+            }
+
+            var builtRouter = routerBuilder.Build();
 
             app.UseRouter(builtRouter);
 
@@ -52,7 +62,7 @@ namespace BibaViewEngine
             return app;
         }
 
-        public static IServiceCollection AddBibaViewEngine<EntryComponent>(this IServiceCollection services, 
+        public static IServiceCollection AddBibaViewEngine<EntryComponent>(this IServiceCollection services,
             Routes routes = null, BibaViewEngineProperties props = null) where EntryComponent : Component
         {
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
@@ -81,6 +91,8 @@ namespace BibaViewEngine
             services.AddSingleton<BibaViewEngineProperties>();
             services.AddSingleton(new RegistesteredTags(tags));
             services.AddSingleton(components);
+            services.AddSingleton(new RouterData());
+
             services.AddTransient<BibaCompiler>();
             services.AddTransient<IBibaRouter, BibaRouter>();
             services.AddTransient<Component, EntryComponent>();
