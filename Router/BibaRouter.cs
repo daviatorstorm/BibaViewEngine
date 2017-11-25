@@ -12,6 +12,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using BibaViewEngine.Models;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+using BibaViewEngine.Security;
 
 namespace BibaViewEngine.Router
 {
@@ -21,13 +23,15 @@ namespace BibaViewEngine.Router
         private readonly BibaCompiler _compiler;
         private readonly IServiceProvider _provider;
         private readonly RouterData _data;
+        private readonly IAuthorizationService _authorizationService;
 
-        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider services, RouterData data)
+        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider provider, RouterData data, IAuthorizationService authorizationService)
         {
             _routes = routes;
             _compiler = compiler;
-            _provider = services;
+            _provider = provider;
             _data = data;
+            _authorizationService = authorizationService;
         }
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
@@ -76,6 +80,16 @@ namespace BibaViewEngine.Router
             if (route != null)
             {
                 var component = (Component)_provider.GetRequiredService(route.Component);
+
+                if (route.Handler != null)
+                {
+                    var authResult = await _authorizationService.AuthorizeAsync(context.HttpContext.User, new object { }, "BibaScheme");
+                    if (!authResult.Succeeded)
+                    {
+                        context.HttpContext.Response.StatusCode = 401;
+                        return;
+                    }
+                }
 
                 await context.HttpContext.Response.WriteAsync(StartCompile(component));
             }

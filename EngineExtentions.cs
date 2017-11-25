@@ -5,6 +5,7 @@ using BibaViewEngine.Models;
 using BibaViewEngine.Router;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -17,6 +18,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using BibaViewEngine.Security;
 
 namespace BibaViewEngine
 {
@@ -84,6 +86,11 @@ namespace BibaViewEngine
                 services.AddTransient(component);
             }
 
+            foreach (var route in routes.Where(x => x.Handler != null))
+            {
+                services.AddScoped(typeof(IAuthorizationHandler), route.Handler.GetType());
+            }
+
             services.AddRouting();
 
             services.AddSingleton(outRoutes);
@@ -96,6 +103,25 @@ namespace BibaViewEngine
             services.AddTransient<BibaCompiler>();
             services.AddTransient<IBibaRouter, BibaRouter>();
             services.AddTransient<Component, EntryComponent>();
+
+            services.AddAuthenticationCore(opts =>
+            {
+                opts.AddScheme("BibaScheme", builder =>
+                {
+                    builder.HandlerType = typeof(BibaAuthenticationHandler);
+                    builder.Build();
+                });
+            });
+
+            services.AddAuthorization(opts =>
+            {
+                opts.AddPolicy("BibaScheme", builder =>
+                {
+                    builder.AddAuthenticationSchemes("BibaScheme");
+                    builder.AddRequirements(new UserSignedinRequrement());
+                    builder.Build();
+                });
+            });
 
             return services;
         }
@@ -119,5 +145,9 @@ namespace BibaViewEngine
 
             outRoutes = routes;
         }
+    }
+
+    public class UserSignedinRequrement : IAuthorizationRequirement
+    {
     }
 }
