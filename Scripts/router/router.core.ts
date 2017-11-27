@@ -6,6 +6,27 @@ class BibaRouter {
         this.initRouterLinks();
     }
 
+    route(path: string) {
+        document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
+
+        this.getComponent(path).then(template => {
+            this.routerContainer.innerHTML = template;
+
+            path = path || '/';
+
+            history.pushState({}, document.title, path);
+
+            this.currentRoute = { path: path };
+
+            document.dispatchEvent(new CustomEvent('onRouteFinish', {
+                detail: {
+                    currentRoute: this.currentRoute,
+                    element: this.routerContainer
+                }
+            }));
+        }).catch(console.error);
+    }
+
     private initRouterLinks() {
         var allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
 
@@ -45,24 +66,7 @@ class BibaRouter {
     private routerLinkClickHandler(event: Event) {
         var componentPath = (event.target as any).path;
 
-        document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: componentPath } }));
-
-        this.getComponent(componentPath).then(template => {
-            this.routerContainer.innerHTML = template;
-
-            componentPath = componentPath || '/';
-
-            history.pushState({}, document.title, componentPath);
-
-            this.currentRoute = { path: componentPath };
-
-            document.dispatchEvent(new CustomEvent('onRouteFinish', {
-                detail: {
-                    currentRoute: this.currentRoute,
-                    element: this.routerContainer
-                }
-            }));
-        }).catch(console.error);
+        this.route(componentPath);
 
         return false;
     }

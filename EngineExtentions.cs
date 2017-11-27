@@ -4,8 +4,9 @@ using BibaViewEngine.Middleware;
 using BibaViewEngine.Models;
 using BibaViewEngine.Router;
 using HtmlAgilityPack;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -17,8 +18,6 @@ using System.Resources;
 using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using BibaViewEngine.Security;
 
 namespace BibaViewEngine
 {
@@ -104,24 +103,16 @@ namespace BibaViewEngine
             services.AddTransient<IBibaRouter, BibaRouter>();
             services.AddTransient<Component, EntryComponent>();
 
-            services.AddAuthenticationCore(opts =>
-            {
-                opts.AddScheme("BibaScheme", builder =>
-                {
-                    builder.HandlerType = typeof(BibaAuthenticationHandler);
-                    builder.Build();
-                });
-            });
-
             services.AddAuthorization(opts =>
             {
                 opts.AddPolicy("BibaScheme", builder =>
                 {
-                    builder.AddAuthenticationSchemes("BibaScheme");
                     builder.AddRequirements(new UserSignedinRequrement());
                     builder.Build();
                 });
             });
+
+            services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
 
             return services;
         }

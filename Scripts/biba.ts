@@ -3,15 +3,13 @@ interface Window {
 }
 
 class Biba {
-    router: BibaRouter;
     activatedController: ViewController;
     glboalController: ViewController;
     private static _cache: { [index: string]: Function } = {};
 
-    private constructor(mainComponent: ViewController) {
-        this.router = new BibaRouter();
+    private constructor(mainComponent: ViewController, private router: BibaRouter) {
         this.router.onRouteFinish((args) => {
-            this.activatedController = Biba.activateController(args.currentRoute.path, args.element);
+            this.activatedController = Biba.activateController(args.currentRoute.path, args.element, this.router);
         });
         this.glboalController = mainComponent;
     }
@@ -24,7 +22,8 @@ class Biba {
         xhr.onloadend = (res: any) => {
             var data = JSON.parse(res.target.response);
             mainElement.innerHTML = data.html;
-            new Biba(Biba.activateController('*', mainElement));
+            var router = new BibaRouter();
+            new Biba(Biba.activateController('*', mainElement, router), router);
         };
         xhr.send();
     }
@@ -37,18 +36,18 @@ class Biba {
         return Biba._cache[name] as any;
     }
 
-    private static activateController(path: string, el: Element) {
+    private static activateController(path: string, el: Element, router: BibaRouter) {
         var controller = Biba._get(path);
         var instance;
         if (controller) {
-            instance = new controller(el);
+            instance = new controller(el, router);
         }
         return instance;
     }
 }
 
 function Controller(path: string) {
-    return function (target, a, b) {
+    return function (target) {
         Biba.inject(path, target);
     }
 }
