@@ -9,8 +9,8 @@ class BibaRouter {
     route(path: string) {
         document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
 
-        this.getComponent(path).then(template => {
-            this.routerContainer.innerHTML = template;
+        return this.getComponent(path).then((response: any) => {
+            this.routerContainer.innerHTML = response.response;
 
             path = path || '/';
 
@@ -24,13 +24,15 @@ class BibaRouter {
                     element: this.routerContainer
                 }
             }));
-        }).catch(console.error);
+
+            return response;
+        });
     }
 
-    private initRouterLinks() {
-        var allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
+    private initRouterLinks(): void {
+        let allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
 
-        for (var item of allElements) {
+        for (let item of allElements) {
             let attr = item.attributes.getNamedItem('router-path');
             if (attr) {
                 (item as any).path = item.attributes.getNamedItem('router-path').value;
@@ -43,20 +45,14 @@ class BibaRouter {
         }
 
         if (this.routerContainer) {
-            document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path: location.pathname } }));
+            var path = location.pathname;
 
-            var componentPath = location.pathname;
+            document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
 
-            this.getComponent(componentPath).then((template: string) => {
-                this.routerContainer.innerHTML = template;
-
-                this.currentRoute = { path: componentPath };
-
-                document.dispatchEvent(new CustomEvent('onRouteFinish', { detail: { currentRoute: this.currentRoute } }));
+            this.route(path).catch(err => {
+                console.log(`Cannot go to ${path}. Error:`, err);
             });
         }
-
-        return {} as any;
     }
 
     private giveAnchorHandler(el: HTMLElement) {
@@ -71,22 +67,32 @@ class BibaRouter {
         return false;
     }
 
-    getComponent(path: string, data?: any): Promise<string> {
+    private getComponent(path: string, data?: any): Promise<string> {
         return new Promise((resolve, reject) => {
-            var req = new XMLHttpRequest();
-            var newPath = `c/${path}`.replace('//', '/')
+            let req = new XMLHttpRequest();
+            let newPath = `c/${path}`.replace('//', '/')
 
             req.open('POST', newPath, true);
 
             req.onload = (event: any) => {
-                resolve(event.target.response);
+                if (req.status >= 200 && req.status < 300) {
+                    resolve(event.target);
+                } else {
+                    reject({
+                        status: req.status,
+                        errorText: req.responseText
+                    });
+                }
             };
 
             req.onerror = (event) => {
-                reject(event);
+                reject({
+                    status: req.status,
+                    errorText: req.responseText
+                });
             };
 
-            req.send(data || null);
+            req.send(data);
         });
     }
 
