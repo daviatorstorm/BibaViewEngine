@@ -1,6 +1,7 @@
 class ViewController {
-    closure: any;
+    scope: any;
 
     constructor(public element: HTMLElement) {
+        this.scope = Biba._get('scope');
     }
 }

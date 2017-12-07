@@ -23,6 +23,7 @@ namespace BibaViewEngine.Router
         private readonly IServiceProvider _provider;
         private readonly RouterData _data;
         private readonly IAuthorizationService _authorizationService;
+        private readonly CamelCasePropertyNamesContractResolver _contractResolver;
 
         public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider provider, RouterData data, IAuthorizationService authorizationService)
         {
@@ -31,6 +32,7 @@ namespace BibaViewEngine.Router
             _provider = provider;
             _data = data;
             _authorizationService = authorizationService;
+            _contractResolver = new CamelCasePropertyNamesContractResolver();
         }
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
@@ -56,20 +58,11 @@ namespace BibaViewEngine.Router
         {
             var startComponent = _provider.GetRequiredService<Component>();
 
-            var agregate = _routes.Select(x => new
-            {
-                Path = x.Path,
-                Name = x.Component.Name
-            });
-
             await context.Response.WriteAsync(JsonConvert.SerializeObject(new
             {
-                Components = agregate,
                 Html = StartCompile(startComponent),
-            }, new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            }));
+                Scope = _provider.GetService<IScope>()
+            }, new JsonSerializerSettings { ContractResolver = _contractResolver }));
         }
 
         private async Task ExecuteRouter(RouteContext context)
@@ -86,11 +79,16 @@ namespace BibaViewEngine.Router
                     if (!authResult.Succeeded)
                     {
                         context.HttpContext.Response.StatusCode = 401;
+                        await context.HttpContext.Response.WriteAsync("Unauthorize");
                         return;
                     }
                 }
 
-                await context.HttpContext.Response.WriteAsync(StartCompile(component));
+                await context.HttpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
+                {
+                    Html = StartCompile(component),
+                    Scope = _provider.GetService<IScope>()
+                }, new JsonSerializerSettings { ContractResolver = _contractResolver }));
             }
             else
             {

@@ -10,7 +10,9 @@ class BibaRouter {
         document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
 
         return this.getComponent(path).then((response: any) => {
-            this.routerContainer.innerHTML = response.response;
+            let data = JSON.parse(response.response);
+            this.routerContainer.innerHTML = data.html;
+            Biba.inject('scope', data.scope);
 
             path = path || '/';
 

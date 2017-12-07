@@ -5,7 +5,7 @@ interface Window {
 class Biba {
     activatedController: ViewController;
     glboalController: ViewController;
-    private static _cache: { [index: string]: Function } = {};
+    private static _cache: { [index: string]: any } = {};
 
     private constructor(mainComponent: ViewController, private router: BibaRouter) {
         this.router.onRouteFinish((args) => {
@@ -22,17 +22,18 @@ class Biba {
         xhr.onloadend = (res: any) => {
             var data = JSON.parse(res.target.response);
             mainElement.innerHTML = data.html;
+            Biba.inject('scope', data.scope);
             var router = new BibaRouter();
             new Biba(Biba.activateController('*', mainElement, router), router);
         };
         xhr.send();
     }
 
-    static inject(name: string, controller: Function) {
-        Biba._cache[name] = controller;
+    static inject(name: string, injectible: any) {
+        Biba._cache[name] = injectible;
     }
 
-    private static _get(name: string) {
+    static _get(name: string) {
         return Biba._cache[name] as any;
     }
 
