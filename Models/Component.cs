@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using BibaViewEngine.Attributes;
 using System;
+using BibaViewEngine.Interfaces;
+using System.Dynamic;
 
 namespace BibaViewEngine
 {
@@ -31,6 +33,8 @@ namespace BibaViewEngine
         public virtual string Template { get; set; }
         [Ignore]
         protected bool PreventDefaults { get; set; } = false;
+        [Ignore]
+        public dynamic Scope { get; internal set; } = new ExpandoObject();
 
         public delegate void EmptyDelegate();
         public delegate void BeforePropertiesSet(object sender);

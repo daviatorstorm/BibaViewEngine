@@ -13,6 +13,7 @@ using Newtonsoft.Json.Serialization;
 using BibaViewEngine.Models;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
+using System.Dynamic;
 
 namespace BibaViewEngine.Router
 {
@@ -56,12 +57,12 @@ namespace BibaViewEngine.Router
 
         private async Task ExecuteStart(HttpContext context)
         {
-            var startComponent = _provider.GetRequiredService<Component>();
+            var component = _provider.GetRequiredService<Component>();
 
             await context.Response.WriteAsync(JsonConvert.SerializeObject(new
             {
-                Html = StartCompile(startComponent),
-                Scope = _provider.GetService<IScope>()
+                Html = StartCompile(component),
+                Scope = component.Scope
             }, new JsonSerializerSettings { ContractResolver = _contractResolver }));
         }
 
@@ -87,7 +88,7 @@ namespace BibaViewEngine.Router
                 await context.HttpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
                 {
                     Html = StartCompile(component),
-                    Scope = _provider.GetService<IScope>()
+                    Scope = component.Scope
                 }, new JsonSerializerSettings { ContractResolver = _contractResolver }));
             }
             else

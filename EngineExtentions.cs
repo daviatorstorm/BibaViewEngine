@@ -113,7 +113,6 @@ namespace BibaViewEngine
             });
 
             services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddScoped<IScope, Scope>();
 
             return services;
         }

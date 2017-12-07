@@ -89,6 +89,7 @@ namespace BibaViewEngine.Compiler
             if (parent != null)
             {
                 evalParentProps = GetParentProps(parent);
+                ReAssign(parent, child);
             }
 
             if (evalParentProps.Count() > 0)
@@ -179,6 +180,14 @@ namespace BibaViewEngine.Compiler
             }
 
             disposed = true;
+        }
+
+        private void ReAssign(dynamic source, dynamic destination)
+        {
+            foreach (var item in (IDictionary<String, Object>)source)
+            {
+                destination[item.Key] = item.Value;
+            }
         }
     }
 
