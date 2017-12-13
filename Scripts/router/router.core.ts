@@ -7,16 +7,23 @@ class BibaRouter {
     }
 
     route(path: string) {
+        path = path === '' ? '/' : path;
+
+        if (this.currentRoute && path == this.currentRoute.path) {
+            return;
+        }
+
         document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
 
         return this.getComponent(path).then((response: any) => {
             let data = JSON.parse(response.response);
             this.routerContainer.innerHTML = data.html;
             Biba.inject('scope', data.scope);
-
+            
             path = path || '/';
-
+            
             history.pushState({}, document.title, path);
+            this.initRouterLinks(this.routerContainer);
 
             this.currentRoute = { path: path };
 
@@ -31,8 +38,15 @@ class BibaRouter {
         });
     }
 
-    private initRouterLinks(): void {
-        let allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
+    private initRouterLinks(element?: HTMLElement): void {
+        let allElements = [];
+        if (!element) {
+            allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
+        } else {
+            allElements = Array.prototype.slice.call(element.getElementsByTagName('*')) as HTMLElement[]
+        }
+        
+        // Implement parent url join
 
         for (let item of allElements) {
             let attr = item.attributes.getNamedItem('router-path');

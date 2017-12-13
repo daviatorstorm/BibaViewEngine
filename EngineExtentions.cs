@@ -49,13 +49,14 @@ namespace BibaViewEngine
             var routerBuilder = new RouteBuilder(app, router)
                 .MapRoute("Start", "app/start");
 
-            foreach (var route in routes)
+            var _routes = CreateRoutes(routes);
+
+            foreach (var route in _routes)
             {
-                routerBuilder.MapRoute(route.Path, "c/" + route.Path);
+                routerBuilder.MapRoute(route.Key, route.Value);
             }
 
             var builtRouter = routerBuilder.Build();
-
             app.UseRouter(builtRouter);
 
             app.UseMiddleware<BibaMiddleware>();
@@ -135,6 +136,30 @@ namespace BibaViewEngine
             }
 
             outRoutes = routes;
+        }
+
+        private static Dictionary<string, string> CreateRoutes(Routes sourceRoutes, Dictionary<string, string> routes = null, string rootRoute = null)
+        {
+            if (routes == null)
+            {
+                routes = new Dictionary<string, string>();
+            }
+
+            foreach (var route in sourceRoutes)
+            {
+                if (string.IsNullOrWhiteSpace(rootRoute))
+                    routes.Add(route.Path, "c/" + route.Path);
+                else
+                    routes.Add(string.Join("/", rootRoute, route.Path), string.Join("/", "c", rootRoute, route.Path));
+
+                if (route.Children != null && route.Children.Count > 0)
+                {
+                    CreateRoutes(route.Children, routes,
+                        string.IsNullOrWhiteSpace(rootRoute) ? route.Path : string.Join("/", rootRoute, route.Path));
+                }
+            }
+
+            return routes;
         }
     }
 

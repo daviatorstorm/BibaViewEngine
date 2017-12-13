@@ -182,7 +182,7 @@ namespace BibaViewEngine.Compiler
             disposed = true;
         }
 
-        private void ReAssign(dynamic source, dynamic destination)
+        public void ReAssign(dynamic source, dynamic destination)
         {
             foreach (var item in (IDictionary<String, Object>)source)
             {

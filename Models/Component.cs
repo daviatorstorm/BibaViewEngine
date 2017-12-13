@@ -28,7 +28,21 @@ namespace BibaViewEngine
         }
 
         [Ignore]
-        public HtmlNode HtmlElement { get => _htmlElement; internal set { _htmlElement = value; if (!string.IsNullOrWhiteSpace(Template)) _htmlElement.InnerHtml = Template; } }
+        public HtmlNode HtmlElement
+        {
+            get
+            {
+                if (_htmlElement == null)
+                {
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(Template);
+                    _htmlElement = doc.DocumentNode;
+                }
+
+                return _htmlElement;
+            }
+            internal set { _htmlElement = value; if (!string.IsNullOrWhiteSpace(Template)) _htmlElement.InnerHtml = Template; }
+        }
         [Ignore]
         public virtual string Template { get; set; }
         [Ignore]

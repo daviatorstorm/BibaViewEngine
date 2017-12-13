@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing.Tree;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -14,6 +15,9 @@ using BibaViewEngine.Models;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using System.Dynamic;
+using Microsoft.AspNetCore.Routing.Template;
+using BibaViewEngine.Exceptions;
+using Microsoft.Extensions.Primitives;
 
 namespace BibaViewEngine.Router
 {
@@ -68,33 +72,73 @@ namespace BibaViewEngine.Router
 
         private async Task ExecuteRouter(RouteContext context)
         {
+            var refererHeader = PathString.FromUriComponent(
+                new Uri((context.HttpContext.Request.Headers["Referer"].ToString()), UriKind.Absolute));
             var originalRoute = context.RouteData.Routers.First(x => x is Route) as Route;
-            var route = _routes.FirstOrDefault(x => x.Path.Equals(originalRoute.Name, StringComparison.OrdinalIgnoreCase));
-            if (route != null)
+            var routeTree = BuildRouteTree(originalRoute.ParsedTemplate.Segments.Skip(1).ToList());
+            context.HttpContext.Request.Path = context.HttpContext.Request.Path.Value.Replace("/c/", "/");
+
+            if (!string.IsNullOrWhiteSpace(refererHeader) &&
+                context.HttpContext.Request.Path.StartsWithSegments(refererHeader,
+                StringComparison.CurrentCultureIgnoreCase, out PathString newPath))
             {
-                var component = (Component)_provider.GetRequiredService(route.Component);
+                context.HttpContext.Request.Path = newPath;
+            }
 
-                if (route.Handler != null)
+            RouterResult completeTemplate = new RouterResult();
+            try
+            {
+                completeTemplate = await CompileRoutes(routeTree, context);
+
+            }
+            catch (UnauthorizedAccessException)
+            {
+                context.HttpContext.Response.StatusCode = 401;
+                await context.HttpContext.Response.WriteAsync("Unauthorize");
+            }
+
+            await context.HttpContext.Response.WriteAsync(JsonConvert.SerializeObject(completeTemplate,
+                new JsonSerializerSettings { ContractResolver = _contractResolver }));
+        }
+
+        private async Task<RouterResult> CompileRoutes(RouteTree routeTree, RouteContext context, HtmlNode node = null)
+        {
+            var component = (Component)_provider.GetRequiredService(routeTree.Route.Component);
+
+            if (routeTree.Route.Handler != null)
+            {
+                var authResult = await _authorizationService.AuthorizeAsync(context.HttpContext.User, new object { }, "BibaScheme");
+                if (!authResult.Succeeded)
                 {
-                    var authResult = await _authorizationService.AuthorizeAsync(context.HttpContext.User, new object { }, "BibaScheme");
-                    if (!authResult.Succeeded)
-                    {
-                        context.HttpContext.Response.StatusCode = 401;
-                        await context.HttpContext.Response.WriteAsync("Unauthorize");
-                        return;
-                    }
+
+                    throw new UnauthorizedAccessException();
                 }
+            }
 
-                await context.HttpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
-                {
-                    Html = StartCompile(component),
-                    Scope = component.Scope
-                }, new JsonSerializerSettings { ContractResolver = _contractResolver }));
+            if (node == null)
+            {
+                node = new HtmlNode(HtmlNodeType.Document, new HtmlDocument(), 0);
+                node.InnerHtml = _compiler.PassValues(component);
             }
             else
             {
-                context.HttpContext.Response.StatusCode = 404;
+                var attrName = "router-container";
+                var routeContainer = node.Descendants().FirstOrDefault(
+                    x => x.Attributes.Any(a => a.Name.Equals(attrName)));
+                routeContainer.InnerHtml = _compiler.PassValues(component);
+                routeContainer.Attributes.Remove(attrName);
             }
+
+            if (routeTree.NestedRoute != null)
+            {
+                await CompileRoutes(routeTree.NestedRoute, context, node);
+            }
+
+            return new RouterResult
+            {
+                Html = node.OuterHtml,
+                Scope = component.Scope
+            };
         }
 
         private string StartCompile(Component component)
@@ -104,6 +148,47 @@ namespace BibaViewEngine.Router
 
             component.HtmlElement = doc.DocumentNode;
             return _compiler.PassValues(component);
+        }
+
+        private RouteTree BuildRouteTree(IList<TemplateSegment> segments, RouteTree route = null, Routes routes = null)
+        {
+            if (routes == null)
+            {
+                routes = _routes;
+            }
+
+            if (route == null)
+            {
+                route = new RouteTree();
+
+                if (segments.Count() == 0)
+                {
+                    route.RouteName = "";
+                    route.Route = routes.FindRoute(route.RouteName);
+
+                    return route;
+                }
+            }
+
+            try
+            {
+                route.RouteName = segments.First().Parts.First().Text;
+                route.Route = routes.FindRoute(route.RouteName);
+
+                segments.RemoveAt(0);
+            }
+            catch
+            {
+                throw new RouteNotExistsException(route.RouteName);
+            }
+
+            if (segments.Count > 0)
+            {
+                route.NestedRoute = new RouteTree();
+                BuildRouteTree(segments, route.NestedRoute, route.Route.Children);
+            }
+
+            return route;
         }
     }
 }

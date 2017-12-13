@@ -49,6 +49,10 @@ namespace BibaViewEngine.Middleware
             var link = doc.CreateElement("script");
             link.SetAttributeValue("src", "biba.min.js");
 
+            var baseTag = doc.CreateElement("base");
+            baseTag.Attributes.Add("href", "/");
+
+            headNode.AppendChild(baseTag);
             headNode.AppendChild(link);
 
             mainHtml.Close();
