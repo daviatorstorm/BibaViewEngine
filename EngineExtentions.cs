@@ -40,9 +40,7 @@ namespace BibaViewEngine
                 {
                     stream.Seek(0, SeekOrigin.Begin);
                     using (var file = File.Create(Path.Combine(props.LibRoot, resourceItem)))
-                    {
                         stream.CopyTo(file);
-                    }
                 }
             }
 
@@ -52,9 +50,7 @@ namespace BibaViewEngine
             var _routes = CreateRoutes(routes);
 
             foreach (var route in _routes)
-            {
                 routerBuilder.MapRoute(route.Key, route.Value);
-            }
 
             var builtRouter = routerBuilder.Build();
             app.UseRouter(builtRouter);
@@ -72,9 +68,7 @@ namespace BibaViewEngine
             Routes outRoutes;
 
             if (props == null)
-            {
                 props = new BibaViewEngineProperties();
-            }
 
             var components = new ComponentTypes(Assembly.Load("BibaViewEngine").GetTypes().Where(x => x.BaseType == typeof(Component))
                 .Concat(Assembly.GetEntryAssembly().GetTypes().Where(x => x.BaseType == typeof(Component))));
@@ -82,14 +76,10 @@ namespace BibaViewEngine
             InitRoutes(out outRoutes, routes);
 
             foreach (var component in components)
-            {
                 services.AddTransient(component);
-            }
 
             foreach (var route in routes.Where(x => x.Handler != null))
-            {
                 services.AddScoped(typeof(IAuthorizationHandler), route.Handler.GetType());
-            }
 
             services.AddRouting();
 
@@ -123,17 +113,11 @@ namespace BibaViewEngine
             outRoutes = new Routes();
 
             if (routes == null)
-            {
                 routes = outRoutes;
-            }
             if (routes.Any(x => x.Component == null))
-            {
                 throw new Exception("Component property cannot be null");
-            }
             if (routes.Any(x => x.Path == null))
-            {
                 throw new Exception("Path property cannot be empty");
-            }
 
             outRoutes = routes;
         }
@@ -141,9 +125,7 @@ namespace BibaViewEngine
         private static Dictionary<string, string> CreateRoutes(Routes sourceRoutes, Dictionary<string, string> routes = null, string rootRoute = null)
         {
             if (routes == null)
-            {
                 routes = new Dictionary<string, string>();
-            }
 
             foreach (var route in sourceRoutes)
             {
@@ -153,10 +135,8 @@ namespace BibaViewEngine
                     routes.Add(string.Join("/", rootRoute, route.Path), string.Join("/", "c", rootRoute, route.Path));
 
                 if (route.Children != null && route.Children.Count > 0)
-                {
                     CreateRoutes(route.Children, routes,
                         string.IsNullOrWhiteSpace(rootRoute) ? route.Path : string.Join("/", rootRoute, route.Path));
-                }
             }
 
             return routes;

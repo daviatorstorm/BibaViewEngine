@@ -23,8 +23,11 @@ class Biba {
             var data = JSON.parse(res.target.response);
             mainElement.innerHTML = data.html;
             Biba.inject('scope', data.scope);
-            var router = new BibaRouter();
+            var router = new BibaRouter('/');
+            router.initRouterLinks();
+            router.route(location.pathname);
             new Biba(Biba.activateController('*', mainElement, router), router);
+            Biba.inject('currentRoute', {});
         };
         xhr.send();
     }

@@ -19,9 +19,7 @@ namespace BibaViewEngine.Compiler
     {
         private readonly RegistesteredTags _tags;
         private readonly IServiceProvider _provider;
-
         private readonly ComponentTypes _types;
-
         private readonly Assembly _ass;
         private readonly HtmlDocument _doc;
         private readonly Regex directive = new Regex("\\(\\[([\\w \\+\\.\\\"\\-\\*\\/\\(\\)]+)\\]\\)");
@@ -52,9 +50,7 @@ namespace BibaViewEngine.Compiler
             var nodes = node.Descendants().ToList();
 
             foreach (var element in nodes.Where(x => !_tags.Contains(x.Name)))
-            {
                 excractedNodes.Add(element);
-            }
 
             return excractedNodes;
         }
@@ -106,13 +102,9 @@ namespace BibaViewEngine.Compiler
                         x.Key.ToLower() == attr.Value.ToString().ToLower()).Value;
 
                     if (parentValue == null)
-                    {
                         childProp.SetValue(child, attr.Value);
-                    }
                     else
-                    {
                         childProp.SetValue(child, parentValue);
-                    }
                 }
             }
 
@@ -130,36 +122,26 @@ namespace BibaViewEngine.Compiler
             var eval = evaluator ?? Evaluator.Create();
 
             foreach (Match match in matches)
-            {
                 replacement = replacement
                     .Replace(match.Value, eval.Evaluate(match.Groups[1].Value.Trim(), context));
-            }
 
             return replacement;
         }
 
-        public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent)
-        {
-            var props = parent.GetType().GetProperties()
+        public IEnumerable<KeyValuePair<string, object>> GetParentProps(Component parent) =>
+            parent.GetType().GetProperties()
                 .Where(x => !x.CustomAttributes.Any(y => y.AttributeType.Equals(typeof(IgnoreAttribute))))
                 .Select(x => new KeyValuePair<string, object>(x.Name.ToLower(), x.GetValue(parent)));
 
-            return props;
-        }
-
-        public void ClearAttributes(HtmlNode node)
-        {
+        public void ClearAttributes(HtmlNode node) =>
             node.Attributes.RemoveAll();
-        }
 
         public void Transclude(Component component)
         {
             var regex = new Regex("<\\s*template\\s*\\/>");
 
             if (!regex.Match(component.Template).Success)
-            {
                 throw new Exception("Template must");
-            }
 
             component.HtmlElement.InnerHtml = Regex.Replace(component.Template, "<\\s*template\\s*\\/>", component.HtmlElement.InnerHtml);
         }
@@ -175,9 +157,7 @@ namespace BibaViewEngine.Compiler
             if (disposed) return;
 
             if (disposing)
-            {
                 handle.Dispose();
-            }
 
             disposed = true;
         }
@@ -185,22 +165,16 @@ namespace BibaViewEngine.Compiler
         public void ReAssign(dynamic source, dynamic destination)
         {
             foreach (var item in (IDictionary<String, Object>)source)
-            {
                 destination[item.Key] = item.Value;
-            }
         }
     }
 
     public class EqualityComparer : IEqualityComparer<Match>
     {
-        public bool Equals(Match x, Match y)
-        {
-            return x.Value == y.Value;
-        }
+        public bool Equals(Match x, Match y) =>
+            x.Value == y.Value;
 
-        public int GetHashCode(Match obj)
-        {
-            return obj.Value.GetHashCode();
-        }
+        public int GetHashCode(Match obj) =>
+            obj.Value.GetHashCode();
     }
 }

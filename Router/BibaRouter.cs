@@ -50,13 +50,9 @@ namespace BibaViewEngine.Router
             _data.SetRouterData((IDictionary<string, object>)context.RouteData.Values);
 
             if (context.HttpContext.Request.Path == "/app/start")
-            {
                 await ExecuteStart(context.HttpContext);
-            }
             else
-            {
                 await ExecuteRouter(context);
-            }
         }
 
         private async Task ExecuteStart(HttpContext context)
@@ -72,24 +68,16 @@ namespace BibaViewEngine.Router
 
         private async Task ExecuteRouter(RouteContext context)
         {
-            var refererHeader = PathString.FromUriComponent(
-                new Uri((context.HttpContext.Request.Headers["Referer"].ToString()), UriKind.Absolute));
-            var originalRoute = context.RouteData.Routers.First(x => x is Route) as Route;
-            var routeTree = BuildRouteTree(originalRoute.ParsedTemplate.Segments.Skip(1).ToList());
             context.HttpContext.Request.Path = context.HttpContext.Request.Path.Value.Replace("/c/", "/");
 
-            if (!string.IsNullOrWhiteSpace(refererHeader) &&
-                context.HttpContext.Request.Path.StartsWithSegments(refererHeader,
-                StringComparison.CurrentCultureIgnoreCase, out PathString newPath))
-            {
-                context.HttpContext.Request.Path = newPath;
-            }
+            var routeTree = BuildRouteTree(TemplateParser.Parse(context.HttpContext.Request.Path.Value.Remove(0, 1)).Segments,
+                TemplateParser.Parse(PathString.FromUriComponent(
+                    new Uri(context.HttpContext.Request.Headers["Referer"].ToString(), UriKind.Absolute)).Value.Remove(0, 1)).Segments);
 
-            RouterResult completeTemplate = new RouterResult();
+            var completeTemplate = new RouterResult();
             try
             {
                 completeTemplate = await CompileRoutes(routeTree, context);
-
             }
             catch (UnauthorizedAccessException)
             {
@@ -101,7 +89,7 @@ namespace BibaViewEngine.Router
                 new JsonSerializerSettings { ContractResolver = _contractResolver }));
         }
 
-        private async Task<RouterResult> CompileRoutes(RouteTree routeTree, RouteContext context, HtmlNode node = null)
+        private async Task<RouterResult> CompileRoutes(RouteTree routeTree, RouteContext context, HtmlNode node = null, Component parent = null)
         {
             var component = (Component)_provider.GetRequiredService(routeTree.Route.Component);
 
@@ -109,30 +97,24 @@ namespace BibaViewEngine.Router
             {
                 var authResult = await _authorizationService.AuthorizeAsync(context.HttpContext.User, new object { }, "BibaScheme");
                 if (!authResult.Succeeded)
-                {
-
                     throw new UnauthorizedAccessException();
-                }
             }
 
-            if (node == null)
+            if (!routeTree.Skip)
             {
-                node = new HtmlNode(HtmlNodeType.Document, new HtmlDocument(), 0);
-                node.InnerHtml = _compiler.PassValues(component);
-            }
-            else
-            {
-                var attrName = "router-container";
-                var routeContainer = node.Descendants().FirstOrDefault(
-                    x => x.Attributes.Any(a => a.Name.Equals(attrName)));
-                routeContainer.InnerHtml = _compiler.PassValues(component);
-                routeContainer.Attributes.Remove(attrName);
+                if (node == null)
+                {
+                    node = new HtmlNode(HtmlNodeType.Document, new HtmlDocument(), 0);
+                    node.InnerHtml = _compiler.PassValues(component);
+                }
+                else
+                    node.Descendants().FirstOrDefault(
+                        x => x.Attributes.Any(a => a.Name.Equals("router-container"))
+                    ).InnerHtml = _compiler.PassValues(component);
             }
 
             if (routeTree.NestedRoute != null)
-            {
-                await CompileRoutes(routeTree.NestedRoute, context, node);
-            }
+                return await CompileRoutes(routeTree.NestedRoute, context, node, parent);
 
             return new RouterResult
             {
@@ -150,18 +132,19 @@ namespace BibaViewEngine.Router
             return _compiler.PassValues(component);
         }
 
-        private RouteTree BuildRouteTree(IList<TemplateSegment> segments, RouteTree route = null, Routes routes = null)
+        private RouteTree BuildRouteTree(IList<TemplateSegment> toSegments, IList<TemplateSegment> fromSegments, RouteTree route = null, Routes routes = null)
         {
+            if (fromSegments.Count >= toSegments.Count)
+                fromSegments.Clear();
+
             if (routes == null)
-            {
                 routes = _routes;
-            }
 
             if (route == null)
             {
                 route = new RouteTree();
 
-                if (segments.Count() == 0)
+                if (toSegments.Count() == 0)
                 {
                     route.RouteName = "";
                     route.Route = routes.FindRoute(route.RouteName);
@@ -170,22 +153,32 @@ namespace BibaViewEngine.Router
                 }
             }
 
+            if (toSegments.Count > 0 && fromSegments.Count > 0)
+                if (toSegments[0].Parts[0].Text == fromSegments[0].Parts[0].Text)
+                    route.Skip = true;
+                else
+                    fromSegments.Clear();
+            else
+                fromSegments.Clear();
+
             try
             {
-                route.RouteName = segments.First().Parts.First().Text;
+                route.RouteName = toSegments.First().Parts.First().Text;
                 route.Route = routes.FindRoute(route.RouteName);
 
-                segments.RemoveAt(0);
+                toSegments.RemoveAt(0);
+                if (fromSegments.Count > 0)
+                    fromSegments.RemoveAt(0);
             }
             catch
             {
                 throw new RouteNotExistsException(route.RouteName);
             }
 
-            if (segments.Count > 0)
+            if (toSegments.Count > 0)
             {
                 route.NestedRoute = new RouteTree();
-                BuildRouteTree(segments, route.NestedRoute, route.Route.Children);
+                BuildRouteTree(toSegments, fromSegments, route.NestedRoute, route.Route.Children);
             }
 
             return route;

@@ -1,17 +1,21 @@
 class BibaRouter {
     private routerContainer: HTMLElement;
-    currentRoute: Route;
+    private _currentRoute: Route;
+    baseUrl: string;
 
-    constructor() {
-        this.initRouterLinks();
+    public get currentRoute(): Route {
+        return Biba._get('currentRoute');
     }
 
-    route(path: string) {
-        path = path === '' ? '/' : path;
+    constructor(baseUrl: string, private rootElement = document.documentElement) {
+        this.baseUrl = baseUrl || '/';
+    }
 
-        if (this.currentRoute && path == this.currentRoute.path) {
+    route(path = this.baseUrl) {
+        path = path || this.baseUrl;
+
+        if (this.currentRoute && path == this.currentRoute.path)
             return;
-        }
 
         document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
 
@@ -19,13 +23,15 @@ class BibaRouter {
             let data = JSON.parse(response.response);
             this.routerContainer.innerHTML = data.html;
             Biba.inject('scope', data.scope);
-            
-            path = path || '/';
-            
-            history.pushState({}, document.title, path);
-            this.initRouterLinks(this.routerContainer);
 
-            this.currentRoute = { path: path };
+            history.pushState({}, document.title, path);
+            var newRouter = new BibaRouter(location.pathname, this.routerContainer);
+            if (!newRouter.initRouterLinks()) {
+                newRouter = null;
+                this.initRouterLinks();
+            }
+
+            this.currentRoute.path = path;
 
             document.dispatchEvent(new CustomEvent('onRouteFinish', {
                 detail: {
@@ -38,37 +44,28 @@ class BibaRouter {
         });
     }
 
-    private initRouterLinks(element?: HTMLElement): void {
-        let allElements = [];
-        if (!element) {
-            allElements = Array.prototype.slice.call(document.body.getElementsByTagName('*')) as HTMLElement[];
-        } else {
-            allElements = Array.prototype.slice.call(element.getElementsByTagName('*')) as HTMLElement[]
-        }
-        
-        // Implement parent url join
+    initRouterLinks(): boolean {
+        let hasChildContainer = false;
+        var rc = this.rootElement.querySelector('[router-container]');
 
-        for (let item of allElements) {
-            let attr = item.attributes.getNamedItem('router-path');
-            if (attr) {
-                (item as any).path = item.attributes.getNamedItem('router-path').value;
-                item.attributes.removeNamedItem('router-path');
-                this.giveAnchorHandler(item);
-            } else if (item.attributes.getNamedItem('router-container')) {
-                this.routerContainer = item;
-                this.routerContainer.attributes.removeNamedItem('router-container');
-            }
+        if (rc) {
+            this.routerContainer = rc as HTMLElement;
+            this.routerContainer.attributes.removeNamedItem('router-container');
+            hasChildContainer = true;
         }
 
-        if (this.routerContainer) {
-            var path = location.pathname;
+        let allElements = this.rootElement.querySelectorAll('[router-path]');
 
-            document.dispatchEvent(new CustomEvent('onRouteStart', { detail: { path } }));
+        allElements.forEach((item) => {
+            let path = item.attributes.getNamedItem('router-path').value;
+            if (path[0] != '/' && hasChildContainer)
+                path = UrlUtils.join(this.baseUrl, path);
+            (item as any).path = path;
+            item.attributes.removeNamedItem('router-path');
+            this.giveAnchorHandler(item as HTMLElement);
+        });
 
-            this.route(path).catch(err => {
-                console.log(`Cannot go to ${path}. Error:`, err);
-            });
-        }
+        return hasChildContainer;
     }
 
     private giveAnchorHandler(el: HTMLElement) {
@@ -91,14 +88,13 @@ class BibaRouter {
             req.open('POST', newPath, true);
 
             req.onload = (event: any) => {
-                if (req.status >= 200 && req.status < 300) {
+                if (req.status >= 200 && req.status < 300)
                     resolve(event.target);
-                } else {
+                else
                     reject({
                         status: req.status,
                         errorText: req.responseText
                     });
-                }
             };
 
             req.onerror = (event) => {
