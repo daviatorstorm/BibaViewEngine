@@ -1,23 +1,19 @@
 ﻿using BibaViewEngine.Compiler;
+using BibaViewEngine.Exceptions;
 using BibaViewEngine.Interfaces;
+using BibaViewEngine.Models;
 using HtmlAgilityPack;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing.Tree;
+using Microsoft.AspNetCore.Routing.Template;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using BibaViewEngine.Models;
+using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Authorization;
-using System.Dynamic;
-using Microsoft.AspNetCore.Routing.Template;
-using BibaViewEngine.Exceptions;
-using Microsoft.Extensions.Primitives;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BibaViewEngine.Router
 {
@@ -62,7 +58,7 @@ namespace BibaViewEngine.Router
             await context.Response.WriteAsync(JsonConvert.SerializeObject(new
             {
                 Html = StartCompile(component),
-                Scope = component.Scope
+                component.Scope
             }, new JsonSerializerSettings { ContractResolver = _contractResolver }));
         }
 

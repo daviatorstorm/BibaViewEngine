@@ -1,11 +1,9 @@
+using BibaViewEngine.Attributes;
 using BibaViewEngine.Compiler;
 using HtmlAgilityPack;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
-using BibaViewEngine.Attributes;
-using System;
-using BibaViewEngine.Interfaces;
-using System.Dynamic;
 
 namespace BibaViewEngine
 {
@@ -22,9 +20,7 @@ namespace BibaViewEngine
 
             if (fileLocation != null)
                 using (var stream = File.OpenText(fileLocation))
-                {
                     Template = stream.ReadToEnd();
-                }
         }
 
         [Ignore]
@@ -38,7 +34,6 @@ namespace BibaViewEngine
                     doc.LoadHtml(Template);
                     _htmlElement = doc.DocumentNode;
                 }
-
                 return _htmlElement;
             }
             internal set { _htmlElement = value; if (!string.IsNullOrWhiteSpace(Template)) _htmlElement.InnerHtml = Template; }
@@ -46,12 +41,11 @@ namespace BibaViewEngine
         [Ignore]
         public virtual string Template { get; set; }
         [Ignore]
-        protected bool PreventDefaults { get; set; } = false;
+        protected bool PreventDefaults { get; set; }
         [Ignore]
         public dynamic Scope { get; internal set; } = new ExpandoObject();
 
         public delegate void EmptyDelegate();
-        public delegate void BeforePropertiesSet(object sender);
 
         protected event EmptyDelegate OnCompileFinish;
         protected event EmptyDelegate OnCompileStart;
@@ -60,10 +54,7 @@ namespace BibaViewEngine
 
         internal string _InnerCompile()
         {
-            if (OnCompileStart != null)
-            {
-                OnCompileStart();
-            }
+            OnCompileStart?.Invoke();
 
             _compiler.ExecuteCompiler(HtmlElement, this);
 
@@ -71,10 +62,7 @@ namespace BibaViewEngine
 
             _compiler.ClearAttributes(HtmlElement);
 
-            if (OnCompileFinish != null)
-            {
-                OnCompileFinish();
-            }
+            OnCompileFinish?.Invoke();
 
             return compilerResult;
         }

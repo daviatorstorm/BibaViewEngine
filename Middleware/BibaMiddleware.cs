@@ -1,27 +1,18 @@
-using BibaViewEngine.Compiler;
-using BibaViewEngine.Interfaces;
 using BibaViewEngine.Models;
+using HtmlAgilityPack;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Threading.Tasks;
-using System;
-using HtmlAgilityPack;
 
 namespace BibaViewEngine.Middleware
 {
     public class BibaMiddleware
     {
-        private readonly BibaCompiler _compiler;
-        private readonly RequestDelegate _next;
         private readonly BibaViewEngineProperties _props;
-        private readonly IBibaRouter _router;
 
-        public BibaMiddleware(RequestDelegate next, BibaCompiler compiler, BibaViewEngineProperties props, IBibaRouter router)
+        public BibaMiddleware(BibaViewEngineProperties props)
         {
-            _compiler = compiler;
-            _next = next;
             _props = props;
-            _router = router;
         }
 
         public async Task Invoke(HttpContext context)

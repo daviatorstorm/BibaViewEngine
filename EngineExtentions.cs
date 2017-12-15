@@ -3,10 +3,9 @@ using BibaViewEngine.Interfaces;
 using BibaViewEngine.Middleware;
 using BibaViewEngine.Models;
 using BibaViewEngine.Router;
-using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -14,10 +13,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Resources;
-using System.Globalization;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
 
 namespace BibaViewEngine
 {
@@ -31,7 +26,6 @@ namespace BibaViewEngine
             var routes = app.ApplicationServices.GetRequiredService<Routes>();
             var props = app.ApplicationServices.GetRequiredService<BibaViewEngineProperties>();
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
-            var applicationRoot = Directory.GetCurrentDirectory();
             var resources = engineAss.GetManifestResourceNames();
             foreach (var item in resources)
             {
@@ -47,7 +41,7 @@ namespace BibaViewEngine
             var routerBuilder = new RouteBuilder(app, router)
                 .MapRoute("Start", "app/start");
 
-            var _routes = CreateRoutes(routes);
+            var _routes = Routes.CreateRoutes(routes);
 
             foreach (var route in _routes)
                 routerBuilder.MapRoute(route.Key, route.Value);
@@ -65,7 +59,6 @@ namespace BibaViewEngine
         {
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
             tags = tags.Concat(new string[] { "#text", "#comment" });
-            Routes outRoutes;
 
             if (props == null)
                 props = new BibaViewEngineProperties();
@@ -73,7 +66,7 @@ namespace BibaViewEngine
             var components = new ComponentTypes(Assembly.Load("BibaViewEngine").GetTypes().Where(x => x.BaseType == typeof(Component))
                 .Concat(Assembly.GetEntryAssembly().GetTypes().Where(x => x.BaseType == typeof(Component))));
 
-            InitRoutes(out outRoutes, routes);
+            InitRoutes(out Routes outRoutes, routes);
 
             foreach (var component in components)
                 services.AddTransient(component);
@@ -120,26 +113,6 @@ namespace BibaViewEngine
                 throw new Exception("Path property cannot be empty");
 
             outRoutes = routes;
-        }
-
-        private static Dictionary<string, string> CreateRoutes(Routes sourceRoutes, Dictionary<string, string> routes = null, string rootRoute = null)
-        {
-            if (routes == null)
-                routes = new Dictionary<string, string>();
-
-            foreach (var route in sourceRoutes)
-            {
-                if (string.IsNullOrWhiteSpace(rootRoute))
-                    routes.Add(route.Path, "c/" + route.Path);
-                else
-                    routes.Add(string.Join("/", rootRoute, route.Path), string.Join("/", "c", rootRoute, route.Path));
-
-                if (route.Children != null && route.Children.Count > 0)
-                    CreateRoutes(route.Children, routes,
-                        string.IsNullOrWhiteSpace(rootRoute) ? route.Path : string.Join("/", rootRoute, route.Path));
-            }
-
-            return routes;
         }
     }
 

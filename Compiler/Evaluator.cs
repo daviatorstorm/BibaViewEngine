@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections;
 
 namespace BibaViewEngine.Compiler
 {
@@ -8,10 +6,8 @@ namespace BibaViewEngine.Compiler
     {
         private bool disposed = false;
 
-        public static Evaluator Create()
-        {
-            return new Evaluator();
-        }
+        public static Evaluator Create() =>
+            new Evaluator();
 
         public string Evaluate(string expression, object context)
         {

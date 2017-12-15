@@ -1,4 +1,5 @@
 using System;
+
 namespace BibaViewEngine.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
