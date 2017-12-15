@@ -2,11 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Version>0.0.5</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>0.0.6-beta-1.0.0</Version>
     <Description>Biba view engine is a new approach of data displaying. Its a brand new engine written from scratch. It is pretty simple and have some similarness with angularjs and/or reactjs so if you familiar with those frameworks it will be easy for you to understand how it works. Enjoy using engine :)</Description>
-    <AssemblyVersion>0.0.0.5</AssemblyVersion>
-    <FileVersion>0.0.0.5</FileVersion>
+    <AssemblyVersion>0.0.0.6</AssemblyVersion>
+    <FileVersion>0.0.0.6</FileVersion>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/daviatorstorm/BibaViewEngine</PackageProjectUrl>
+    <Copyright>https://github.com/daviatorstorm</Copyright>
+    <RepositoryUrl>https://github.com/daviatorstorm/BibaViewEngine</RepositoryUrl>
+    <RepositoryType>public</RepositoryType>
+    <PackageTags>mvvm, dotnetcore, aspnetcore, netcoreapp2.0, aspnet, core, bibaviewengine, biba, viewengine, view, engine</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
