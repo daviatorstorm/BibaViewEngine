@@ -10,7 +10,7 @@ namespace BibaViewEngine.Middleware
     {
         private readonly BibaViewEngineProperties _props;
 
-        public BibaMiddleware(BibaViewEngineProperties props)
+        public BibaMiddleware(RequestDelegate next, BibaViewEngineProperties props)
         {
             _props = props;
         }

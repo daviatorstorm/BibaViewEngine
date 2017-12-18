@@ -5,7 +5,7 @@ using BibaViewEngine.Models;
 using BibaViewEngine.Router;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -18,13 +18,14 @@ namespace BibaViewEngine
 {
     public static class EngineExtensions
     {
-        const string registeredTags = "['footer', 'a', 'abbr', 'acronym', 'address', 'applet', 'area', 'base', 'basefont', 'big', 'blink', 'blockquote', 'body', 'br', 'b', 'button', 'caption', 'center', 'cite', 'code', 'col', 'dfn', 'dir', 'div', 'dl', 'dt', 'dd', 'em', 'font', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'img', 'input', 'isindex', 'i', 'kbd', 'link', 'li', 'map', 'marquee', 'menu', 'meta', 'ol', 'option', 'param', 'pre', 'p', 'q', 'samp', 'script', 'select', 'small', 'span', 'strikeout', 'strong', 'style', 'sub', 'sup', 'table', 'td', 'textarea', 'th', 'tbody', 'thead', 'tfoot', 'title', 'tr', 'tt', 'ul', 'u', 'var', 'nav']";
+        const string registeredTags = "['footer', 'a', 'abbr', 'acronym', 'address', 'applet', 'area', 'base', 'basefont', 'big', 'blink', 'blockquote', 'body', 'br', 'b', 'button', 'caption', 'center', 'cite', 'code', 'col', 'dfn', 'dir', 'div', 'dl', 'dt', 'dd', 'em', 'font', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'img', 'input', 'isindex', 'i', 'kbd', 'link', 'li', 'map', 'marquee', 'menu', 'meta', 'ol', 'option', 'param', 'pre', 'p', 'q', 'samp', 'script', 'select', 'small', 'span', 'strikeout', 'strong', 'style', 'sub', 'sup', 'table', 'td', 'textarea', 'th', 'tbody','thead', 'tfoot', 'title', 'tr', 'tt', 'ul', 'u', 'var', 'nav']";
 
         public static IApplicationBuilder UseBibaViewEngine(this IApplicationBuilder app)
         {
             var router = app.ApplicationServices.GetRequiredService<IBibaRouter>();
             var routes = app.ApplicationServices.GetRequiredService<Routes>();
             var props = app.ApplicationServices.GetRequiredService<BibaViewEngineProperties>();
+            var env = app.ApplicationServices.GetRequiredService<IHostingEnvironment>();
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
             var resources = engineAss.GetManifestResourceNames();
             foreach (var item in resources)
@@ -33,7 +34,7 @@ namespace BibaViewEngine
                 using (var stream = engineAss.GetManifestResourceStream(item))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
-                    using (var file = File.Create(Path.Combine(props.LibRoot, resourceItem)))
+                    using (var file = File.Create(Path.Combine(env.ContentRootPath, resourceItem)))
                         stream.CopyTo(file);
                 }
             }
@@ -55,13 +56,13 @@ namespace BibaViewEngine
         }
 
         public static IServiceCollection AddBibaViewEngine<EntryComponent>(this IServiceCollection services,
-            Routes routes = null, BibaViewEngineProperties props = null) where EntryComponent : Component
+            Routes routes = null, Action<BibaViewEngineProperties> propsAct = null) where EntryComponent : Component
         {
             var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
             tags = tags.Concat(new string[] { "#text", "#comment" });
 
-            if (props == null)
-                props = new BibaViewEngineProperties();
+            var props = new BibaViewEngineProperties();
+            propsAct?.Invoke(props);
 
             var components = new ComponentTypes(Assembly.Load("BibaViewEngine").GetTypes().Where(x => x.BaseType == typeof(Component))
                 .Concat(Assembly.GetEntryAssembly().GetTypes().Where(x => x.BaseType == typeof(Component))));
@@ -71,8 +72,9 @@ namespace BibaViewEngine
             foreach (var component in components)
                 services.AddTransient(component);
 
-            foreach (var route in routes.Where(x => x.Handler != null))
-                services.AddScoped(typeof(IAuthorizationHandler), route.Handler.GetType());
+            if (routes != null)
+                foreach (var route in routes.Where(x => x.Handler != null))
+                    services.AddScoped(typeof(IAuthorizationHandler), route.Handler.GetType());
 
             services.AddRouting();
 
@@ -95,8 +97,6 @@ namespace BibaViewEngine
                     builder.Build();
                 });
             });
-
-            services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
 
             return services;
         }
