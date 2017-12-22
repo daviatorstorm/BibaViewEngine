@@ -1,13 +1,4 @@
 # BibaViewEngine
-## Aspnet core view engine
-
-## Project status
-
-> Project is in beta
-
-Package: https://www.nuget.org/packages/BibaViewEngine/0.0.6-beta-1.0.0
-
-Current version: 0.0.6-beta-1.0.0
 
 ## Overview
 
@@ -15,8 +6,25 @@ Biba view engine is a new approach of data displaying. Its a brand new engine wr
 
 > Currently it is working with netcoreapp2.0 and SDK 2.0.0
 
+## Project status
+
+> Project is in beta
+
+Package: https://www.nuget.org/packages/BibaViewEngine
+
+Current version: [![NuGet version](https://badge.fury.io/nu/bibaviewengine.svg)](https://badge.fury.io/nu/bibaviewengine)
+
+## Plans
+
+* [ ] Add Razor syntax and compilation support
+* [ ] Client side on router-path click active class change
+* [ ] Client side DI implementation
+* [ ] Backend and Client side tests
+* [ ] More registered components
+  * [ ] If/if-else/else
+* [ ] Glboal state support or cross controller data object
+
 ## Docs
 
-https://github.com/daviatorstorm/BibaViewEngine/wiki
-
-## 
+Detalized documentation on
+[Wiki docs](https://github.com/daviatorstorm/BibaViewEngine/wiki)

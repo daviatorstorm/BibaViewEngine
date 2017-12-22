@@ -81,31 +81,8 @@ class BibaRouter {
     }
 
     private getComponent(path: string, data?: any): Promise<string> {
-        return new Promise((resolve, reject) => {
-            let req = new XMLHttpRequest();
-            let newPath = `c/${path}`.replace('//', '/')
-
-            req.open('POST', newPath, true);
-
-            req.onload = (event: any) => {
-                if (req.status >= 200 && req.status < 300)
-                    resolve(event.target);
-                else
-                    reject({
-                        status: req.status,
-                        errorText: req.responseText
-                    });
-            };
-
-            req.onerror = (event) => {
-                reject({
-                    status: req.status,
-                    errorText: req.responseText
-                });
-            };
-
-            req.send(data);
-        });
+        return HttpClient.request(`c/${path}`.replace('//', '/'), HttpMethod.GET);
+       
     }
 
     onRouteStart(handler: { (args: any): void }) {

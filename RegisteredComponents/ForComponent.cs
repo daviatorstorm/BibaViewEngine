@@ -6,8 +6,7 @@ namespace BibaViewEngine
 {
     public class ForComponent : Component
     {
-        public ForComponent(BibaCompiler bibaCompiler)
-            : base(bibaCompiler)
+        public ForComponent()
         {
             PreventDefaults = true;
         }

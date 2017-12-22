@@ -1,5 +1,6 @@
 using BibaViewEngine.Attributes;
 using BibaViewEngine.Compiler;
+using BibaViewEngine.Models;
 using HtmlAgilityPack;
 using System.Dynamic;
 using System.IO;
@@ -10,18 +11,8 @@ namespace BibaViewEngine
     public abstract class Component
     {
         private HtmlNode _htmlElement;
-        protected readonly BibaCompiler _compiler;
-        public Component(BibaCompiler bibaCompiler)
-        {
-            _compiler = bibaCompiler;
-
-            var fileLocation = Directory.GetFiles("Client", $"{GetType().Name}.html",
-                                        SearchOption.AllDirectories).FirstOrDefault();
-
-            if (fileLocation != null)
-                using (var stream = File.OpenText(fileLocation))
-                    Template = stream.ReadToEnd();
-        }
+        private string _template;
+        internal BibaCompiler _compiler;
 
         [Ignore]
         public HtmlNode HtmlElement
@@ -36,19 +27,43 @@ namespace BibaViewEngine
                 }
                 return _htmlElement;
             }
-            internal set { _htmlElement = value; if (!string.IsNullOrWhiteSpace(Template)) _htmlElement.InnerHtml = Template; }
+            internal set { _htmlElement = value; if (!string.IsNullOrWhiteSpace(Template) && _htmlElement != null) _htmlElement.InnerHtml = Template; }
         }
         [Ignore]
-        public virtual string Template { get; set; }
+        public virtual string Template
+        {
+            get
+            {
+                if (_template == null)
+                {
+                    var fileLocation = Directory.GetFiles(Props.ComponentsRoot, $"{GetType().Name}.html",
+                                        SearchOption.AllDirectories).FirstOrDefault();
+
+                    if (fileLocation != null & File.Exists(fileLocation))
+                        using (var stream = File.OpenText(fileLocation))
+                            _template = stream.ReadToEnd();
+                }
+
+                return _template;
+            }
+        }
         [Ignore]
         protected bool PreventDefaults { get; set; }
         [Ignore]
         public dynamic Scope { get; internal set; } = new ExpandoObject();
+        [Ignore]
+        internal BibaViewEngineProperties Props { get; set; }
 
         public delegate void EmptyDelegate();
 
         protected event EmptyDelegate OnCompileFinish;
         protected event EmptyDelegate OnCompileStart;
+        protected event EmptyDelegate OnInit;
+
+        internal void StartInitEvent()
+        {
+            OnInit?.Invoke();
+        }
 
         public virtual string InnerCompile() { return string.Empty; }
 
@@ -64,7 +79,7 @@ namespace BibaViewEngine
 
             OnCompileFinish?.Invoke();
 
-            return compilerResult;
+            return string.IsNullOrWhiteSpace(compilerResult) ? "<!-- -->" : compilerResult;
         }
     }
 }

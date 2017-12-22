@@ -1,17 +1,12 @@
+using BibaViewEngine.Attributes;
+using BibaViewEngine.Extensions;
+using BibaViewEngine.Models;
 using HtmlAgilityPack;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Collections.Generic;
-using BibaViewEngine.Attributes;
 using System.Text.RegularExpressions;
-using BibaViewEngine.Models;
-using System.Threading.Tasks;
-using System.Collections;
-using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BibaViewEngine.Compiler
 {
@@ -25,7 +20,6 @@ namespace BibaViewEngine.Compiler
         private readonly Regex directive = new Regex("\\(\\[([\\w \\+\\.\\\"\\-\\*\\/\\(\\)]+)\\]\\)");
 
         bool disposed = false;
-        SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
 
         public BibaCompiler(RegistesteredTags tags, IServiceProvider services, ComponentTypes types)
         {
@@ -71,9 +65,7 @@ namespace BibaViewEngine.Compiler
         {
             var component = _types.Single(x => x.Name.ToLower() == $"{node.Name.ToLower()}component");
 
-            var instance = (Component)_provider.GetRequiredService(component);
-
-            instance.HtmlElement = node;
+            var instance = _provider.CreateComponent(component, node);
 
             return instance;
         }
@@ -157,7 +149,7 @@ namespace BibaViewEngine.Compiler
             if (disposed) return;
 
             if (disposing)
-                handle.Dispose();
+                GC.SuppressFinalize(this);
 
             disposed = true;
         }

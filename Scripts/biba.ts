@@ -1,7 +1,3 @@
-interface Window {
-    _controllerCache: any;
-}
-
 class Biba {
     activatedController: ViewController;
     glboalController: ViewController;
@@ -9,27 +5,22 @@ class Biba {
 
     private constructor(mainComponent: ViewController, private router: BibaRouter) {
         this.router.onRouteFinish((args) => {
-            this.activatedController = Biba.activateController(args.currentRoute.path, args.element, this.router);
+            this.activatedController = Biba.activateController(args.currentRoute.path == '/' ? '' : args.currentRoute.path, args.element, this.router);
         });
         this.glboalController = mainComponent;
     }
 
-    static Start(startComponent: string) {
-        var mainElement = document.getElementsByTagName(startComponent)[0];
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('Get', '/app/start');
-        xhr.onloadend = (res: any) => {
-            var data = JSON.parse(res.target.response);
+    static Start(mainElement: Element) {
+        HttpClient.request('/app/start', HttpMethod.GET).then(res => {
+            var data = JSON.parse(res.response);
             mainElement.innerHTML = data.html;
             Biba.inject('scope', data.scope);
             var router = new BibaRouter('/');
             router.initRouterLinks();
             router.route(location.pathname);
             new Biba(Biba.activateController('*', mainElement, router), router);
-            Biba.inject('currentRoute', {});
-        };
-        xhr.send();
+            Biba.inject('currentRoute', { path: location.pathname });
+        });
     }
 
     static inject(name: string, injectible: any) {
@@ -55,3 +46,11 @@ function Controller(path: string) {
         Biba.inject(path, target);
     }
 }
+
+(function () {
+    document.onreadystatechange = function (event) {
+        if (document.readyState == 'complete') {
+            Biba.Start(document.getElementsByTagName('app')[0]);
+        }
+    };
+})();

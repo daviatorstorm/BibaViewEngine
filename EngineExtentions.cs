@@ -6,6 +6,7 @@ using BibaViewEngine.Router;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -24,7 +25,6 @@ namespace BibaViewEngine
         {
             var router = app.ApplicationServices.GetRequiredService<IBibaRouter>();
             var routes = app.ApplicationServices.GetRequiredService<Routes>();
-            var props = app.ApplicationServices.GetRequiredService<BibaViewEngineProperties>();
             var env = app.ApplicationServices.GetRequiredService<IHostingEnvironment>();
             var engineAss = Assembly.Load(new AssemblyName("BibaViewEngine"));
             var resources = engineAss.GetManifestResourceNames();
@@ -34,7 +34,7 @@ namespace BibaViewEngine
                 using (var stream = engineAss.GetManifestResourceStream(item))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
-                    using (var file = File.Create(Path.Combine(env.ContentRootPath, resourceItem)))
+                    using (var file = File.Create(Path.Combine(env.WebRootPath, resourceItem)))
                         stream.CopyTo(file);
                 }
             }
@@ -49,6 +49,17 @@ namespace BibaViewEngine
 
             var builtRouter = routerBuilder.Build();
             app.UseRouter(builtRouter);
+
+            app.Use((context, next) =>
+            {
+                if (context.Request.Path.StartsWithSegments("/c"))
+                {
+                    context.Response.StatusCode = 404;
+                    context.Response.WriteAsync("Unknown route");
+                }
+
+                return next();
+            });
 
             app.UseMiddleware<BibaMiddleware>();
 

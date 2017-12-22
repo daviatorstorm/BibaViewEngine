@@ -1,5 +1,6 @@
 ﻿using BibaViewEngine.Compiler;
 using BibaViewEngine.Exceptions;
+using BibaViewEngine.Extensions;
 using BibaViewEngine.Interfaces;
 using BibaViewEngine.Models;
 using HtmlAgilityPack;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -53,7 +53,7 @@ namespace BibaViewEngine.Router
 
         private async Task ExecuteStart(HttpContext context)
         {
-            var component = _provider.GetRequiredService<Component>();
+            var component = _provider.CreateComponent<Component>();
 
             await context.Response.WriteAsync(JsonConvert.SerializeObject(new
             {
@@ -87,7 +87,7 @@ namespace BibaViewEngine.Router
 
         private async Task<RouterResult> CompileRoutes(RouteTree routeTree, RouteContext context, HtmlNode node = null, Component parent = null)
         {
-            var component = (Component)_provider.GetRequiredService(routeTree.Route.Component);
+            var component = _provider.CreateComponent(routeTree.Route.Component);
 
             if (routeTree.Route.Handler != null)
             {
