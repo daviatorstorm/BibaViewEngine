@@ -23,6 +23,7 @@ Current version: [![NuGet version](https://badge.fury.io/nu/bibaviewengine.svg)]
 * [ ] More registered components
   * [ ] If/if-else/else
 * [ ] Glboal state support or cross controller data object
+* [ ] Biba Client Side deploy to https://www.npmjs.com/
 
 ## Docs
 
