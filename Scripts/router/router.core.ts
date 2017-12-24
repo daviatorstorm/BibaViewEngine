@@ -24,7 +24,7 @@ class BibaRouter {
             this.routerContainer.innerHTML = data.html;
             Biba.inject('scope', data.scope);
 
-            history.pushState({}, document.title, path);
+            history.pushState({path: path}, document.title, path);
             var newRouter = new BibaRouter(location.pathname, this.routerContainer);
             if (!newRouter.initRouterLinks()) {
                 newRouter = null;

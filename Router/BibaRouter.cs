@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BibaViewEngine.Router
 {
@@ -23,16 +24,17 @@ namespace BibaViewEngine.Router
         private readonly BibaCompiler _compiler;
         private readonly IServiceProvider _provider;
         private readonly RouterData _data;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly CurrentRoute _currentRoute;
         private readonly CamelCasePropertyNamesContractResolver _contractResolver;
 
-        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider provider, RouterData data, IAuthorizationService authorizationService)
+        public BibaRouter(Routes routes, BibaCompiler compiler, IServiceProvider provider,
+            RouterData data, CurrentRoute currentRoute)
         {
             _routes = routes;
             _compiler = compiler;
             _provider = provider;
             _data = data;
-            _authorizationService = authorizationService;
+            _currentRoute = currentRoute;
             _contractResolver = new CamelCasePropertyNamesContractResolver();
         }
 
@@ -88,9 +90,11 @@ namespace BibaViewEngine.Router
         private async Task<RouterResult> CompileRoutes(RouteTree routeTree, RouteContext context, HtmlNode node = null, Component parent = null)
         {
             var component = _provider.CreateComponent(routeTree.Route.Component);
+            var _authorizationService = context.HttpContext.RequestServices.GetRequiredService<IAuthorizationService>();
 
             if (routeTree.Route.Handler != null)
             {
+                _currentRoute.Route = routeTree.Route;
                 var authResult = await _authorizationService.AuthorizeAsync(context.HttpContext.User, new object { }, "BibaScheme");
                 if (!authResult.Succeeded)
                     throw new UnauthorizedAccessException();

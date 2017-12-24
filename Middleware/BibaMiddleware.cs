@@ -34,7 +34,8 @@ namespace BibaViewEngine.Middleware
             if (headNode == null)
             {
                 headNode = doc.CreateElement("head");
-                node.AppendChild(headNode);
+                var body = node.SelectSingleNode("//body");
+                body.ParentNode.InsertBefore(headNode, body);
             }
 
             var link = doc.CreateElement("script");
@@ -43,8 +44,14 @@ namespace BibaViewEngine.Middleware
             var baseTag = doc.CreateElement("base");
             baseTag.Attributes.Add("href", "/");
 
-            headNode.AppendChild(baseTag);
-            headNode.AppendChild(link);
+            if (headNode.FirstChild != null)
+            {
+                headNode.AppendChild(baseTag);
+                headNode.AppendChild(link);
+            } else {
+                headNode.InsertBefore(link, headNode.FirstChild);
+                headNode.InsertBefore(baseTag, headNode.FirstChild);
+            }
 
             mainHtml.Close();
 

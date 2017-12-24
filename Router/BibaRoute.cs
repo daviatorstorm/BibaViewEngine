@@ -8,6 +8,6 @@ namespace BibaViewEngine.Router
         public string Path { get; set; }
         public Type Component { get; set; }
         public Routes Children { get; set; }
-        public IAuthorizationHandler Handler { get; set; }
+        public Action<AuthorizationHandlerContext> Handler { get; set; }
     }
 }

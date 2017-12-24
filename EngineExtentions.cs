@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using BibaViewEngine.Auth;
 
 namespace BibaViewEngine
 {
@@ -83,10 +84,6 @@ namespace BibaViewEngine
             foreach (var component in components)
                 services.AddTransient(component);
 
-            if (routes != null)
-                foreach (var route in routes.Where(x => x.Handler != null))
-                    services.AddScoped(typeof(IAuthorizationHandler), route.Handler.GetType());
-
             services.AddRouting();
 
             services.AddSingleton(outRoutes);
@@ -95,16 +92,18 @@ namespace BibaViewEngine
             services.AddSingleton(new RegistesteredTags(tags));
             services.AddSingleton(components);
             services.AddSingleton(new RouterData());
+            services.AddSingleton(new CurrentRoute { Route = new BibaRoute() });
 
             services.AddTransient<BibaCompiler>();
             services.AddTransient<IBibaRouter, BibaRouter>();
             services.AddTransient<Component, EntryComponent>();
+            services.AddScoped<IAuthorizationHandler, BibaAuthorizationHandler>();
 
             services.AddAuthorization(opts =>
             {
                 opts.AddPolicy("BibaScheme", builder =>
                 {
-                    builder.AddRequirements(new UserSignedinRequrement());
+                    builder.AddRequirements(new DefaultRequirement());
                     builder.Build();
                 });
             });
@@ -127,7 +126,7 @@ namespace BibaViewEngine
         }
     }
 
-    public class UserSignedinRequrement : IAuthorizationRequirement
+    public class DefaultRequirement : IAuthorizationRequirement
     {
     }
 }
