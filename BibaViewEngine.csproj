@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.0.1" />
     <PackageReference Include="BuildBundlerMinifier" Version="2.6.362" />
   </ItemGroup>
-
+  
   <Target Name="TypescriptCompile">
     <Message Text="Executing typescript compiler" />
     <Exec Command="tsc" IgnoreExitCode="true" />

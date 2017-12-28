@@ -53,12 +53,17 @@ namespace BibaViewEngine
 
             app.Use((context, next) =>
             {
-                if (context.Request.Path.StartsWithSegments("/c"))
+                var startsWithC = context.Request.Path.StartsWithSegments("/c");
+                if (startsWithC && _routes.Count == 0)
+                {
+                    context.Response.StatusCode = 204;
+                    context.Response.WriteAsync("No routes");
+                }
+                else if (startsWithC)
                 {
                     context.Response.StatusCode = 404;
                     context.Response.WriteAsync("Unknown route");
                 }
-
                 return next();
             });
 

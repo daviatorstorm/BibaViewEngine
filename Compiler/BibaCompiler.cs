@@ -77,7 +77,7 @@ namespace BibaViewEngine.Compiler
             if (parent != null)
             {
                 evalParentProps = GetParentProps(parent);
-                ReAssign(parent, child);
+                ReAssign(parent.Scope, child.Scope);
             }
 
             if (evalParentProps.Count() > 0)

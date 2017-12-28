@@ -45,7 +45,7 @@ namespace BibaViewEngine.Router
 
         public async Task RouteAsync(RouteContext context)
         {
-            _data.SetRouterData((IDictionary<string, object>)context.RouteData.Values);
+            _data.SetRouterData(context.RouteData.Values);
 
             if (context.HttpContext.Request.Path == "/app/start")
                 await ExecuteStart(context.HttpContext);

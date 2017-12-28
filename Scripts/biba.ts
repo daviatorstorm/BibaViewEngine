@@ -8,10 +8,10 @@ class Biba {
             this.activatedController = Biba.activateController(args.currentRoute.path == '/' ? '' : args.currentRoute.path, args.element, this.router);
         });
         this.glboalController = mainComponent;
-
         window.onpopstate = (event: any) => {
-            this.router.route(event.target.history.state.path);
-        }
+            if (event.target.history.state)
+                this.router.route(event.target.history.state.path);
+        };
     }
 
     static Start(mainElement: Element) {
