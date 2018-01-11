@@ -75,7 +75,7 @@ namespace BibaViewEngine
         public static IServiceCollection AddBibaViewEngine<EntryComponent>(this IServiceCollection services,
             Routes routes = null, Action<BibaViewEngineProperties> propsAct = null) where EntryComponent : Component
         {
-            var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
+            var tags = GetRegisterTags();
             tags = tags.Concat(new string[] { "#text", "#comment" });
 
             var props = new BibaViewEngineProperties();
@@ -129,6 +129,9 @@ namespace BibaViewEngine
 
             outRoutes = routes;
         }
+
+        public static IEnumerable<string> GetRegisterTags() =>
+             Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<string>>(registeredTags);
     }
 
     public class DefaultRequirement : IAuthorizationRequirement

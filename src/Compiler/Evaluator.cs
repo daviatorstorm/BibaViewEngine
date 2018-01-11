@@ -1,3 +1,4 @@
+using BibaViewEngine.Exceptions;
 using System;
 
 namespace BibaViewEngine.Compiler
@@ -16,6 +17,12 @@ namespace BibaViewEngine.Compiler
             foreach (string propertyName in expression.Split('.'))
             {
                 var property = currentType.GetProperty(propertyName);
+
+                if (property == null)
+                {
+                    throw new EvaluatorPropertyNotExistsException(propertyName, context);
+                }
+
                 context = property.GetValue(context, null);
                 currentType = context.GetType();
             }
