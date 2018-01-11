@@ -2,6 +2,7 @@ using BibaViewEngine.Attributes;
 using BibaViewEngine.Compiler;
 using BibaViewEngine.Models;
 using HtmlAgilityPack;
+using Microsoft.AspNetCore.Http;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -53,6 +54,8 @@ namespace BibaViewEngine
         public dynamic Scope { get; internal set; } = new ExpandoObject();
         [Ignore]
         internal BibaViewEngineProperties Props { get; set; }
+        [Ignore]
+        public HttpContext HttpContext { get; internal set; }
 
         public delegate void EmptyDelegate();
 
