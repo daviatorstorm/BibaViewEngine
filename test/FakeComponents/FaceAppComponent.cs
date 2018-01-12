@@ -1,10 +1,11 @@
-﻿using System;
+﻿using BibaViewEngine;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace test.FakeComponents
 {
-    class FaceAppComponent
+    public class FaceAppComponent : Component
     {
     }
 }

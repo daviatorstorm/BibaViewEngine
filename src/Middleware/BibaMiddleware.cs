@@ -1,3 +1,4 @@
+using BibaViewEngine.Exceptions;
 using BibaViewEngine.Models;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Http;
@@ -19,8 +20,17 @@ namespace BibaViewEngine.Middleware
         {
             if (!context.Response.HasStarted && context.Response.StatusCode != 404 &&
                 !Path.HasExtension(context.Request.Path))
-                using (var mainHtml = File.Open(_props.IndexHtml, FileMode.Open))
-                    await context.Response.WriteAsync(AppendMainScript(mainHtml));
+            {
+                if (File.Exists(_props.IndexHtml))
+                {
+                    using (var mainHtml = File.Open(_props.IndexHtml, FileMode.Open))
+                        await context.Response.WriteAsync(AppendMainScript(mainHtml));
+                }
+                else
+                {
+                    throw new IndexHtmlNotExistsException(_props);
+                }
+            }
         }
 
         private string AppendMainScript(Stream mainHtml)

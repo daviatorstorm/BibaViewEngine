@@ -35,7 +35,7 @@ namespace BibaViewEngine
                 using (var stream = engineAss.GetManifestResourceStream(item))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
-                    using (var file = File.Create(Path.Combine(env.WebRootPath, resourceItem)))
+                    using (var file = File.Create(Path.Combine(env.WebRootPath ?? env.ContentRootPath, resourceItem)))
                         stream.CopyTo(file);
                 }
             }
