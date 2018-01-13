@@ -1,6 +1,6 @@
 ﻿using BibaViewEngine.Constants;
+using BibaViewEngine.Exceptions;
 using BibaViewEngine.Router;
-using Microsoft.AspNetCore.Hosting;
 using Newtonsoft.Json;
 using System.IO;
 using System.Net;
@@ -12,8 +12,6 @@ namespace test
 {
     public partial class IntegratedTest
     {
-        private readonly IWebHost host;
-
         [Fact]
         public async void GetFirstEntryComponent_Success()
         {
@@ -41,11 +39,11 @@ namespace test
         }
 
         [Fact]
-        public async void GetMainComponent()
+        public async void GetMainComponent_Success()
         {
             // Act
             var response = await server.CreateRequest("c/main")
-                .AddHeader("Referer", server.BaseAddress + "")
+                .AddHeader("Referer", server.BaseAddress.AbsoluteUri)
                 .GetAsync();
             response.EnsureSuccessStatusCode();
 
@@ -54,6 +52,58 @@ namespace test
 
             // Assert
             Assert.Equal(template, result.Html);
+        }
+
+        [Fact]
+        public async void GetComplexComponent_Success()
+        {
+            // Act
+            var response = await server.CreateRequest("c/complex")
+                .AddHeader("Referer", server.BaseAddress.AbsoluteUri)
+                .GetAsync();
+            response.EnsureSuccessStatusCode();
+
+            var result = await GetRouterResult(response);
+
+            // Assert
+            Assert.Equal(complexTemplate, result.Html);
+        }
+
+        [Fact]
+        public async void GetRouterData_Success() // TODO: Find better solution
+        {
+            // Act
+            var response = await server.CreateRequest($"c/param/10")
+                .AddHeader("Referer", server.BaseAddress.AbsoluteUri)
+                .GetAsync();
+            response.EnsureSuccessStatusCode();
+
+            // Assert is not needed
+        }
+
+        [Fact]
+        public void RootComponentNoContainer_Failed()
+        {
+            Assert.ThrowsAsync<RouterChildContainerNotExistsException>(async () =>
+            {
+                await server.CreateRequest($"c/bad-child/sub")
+                    .AddHeader("Referer", server.BaseAddress.AbsoluteUri)
+                    .GetAsync();
+            });
+        }
+
+        [Fact]
+        public async void FromRootToSubRoute_Success()
+        {
+            var response = await server.CreateRequest($"c/child/sub")
+                .AddHeader("Referer", server.BaseAddress.AbsoluteUri)
+                .GetAsync();
+            response.EnsureSuccessStatusCode();
+
+            var result = (await GetRouterResult(response)).Html;
+
+            // Assert
+            Assert.Equal(rootToSubTemplate, result);
         }
 
         private async Task<RouterResult> GetRouterResult(HttpResponseMessage response) =>

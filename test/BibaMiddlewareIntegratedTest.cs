@@ -13,16 +13,21 @@ namespace test
     {
         TestServer server;
         HttpClient client;
-        string path;
+        IWebHost host;
+
+        string path = "wwwroot/index.html";
         string template = "<html><head><base href=\"/\"><script src=\"biba.min.js\"></script></head><body></body></html>";
+        string complexTemplate = "<p>Fale Complex component</p>\r\n\r\n<fakesub><p>Fake Sub component</p></fakesub>\r\n\r\n<div router-container=\"\"></div>";
+        string rootToSubTemplate = "<p>Fale Complex component</p>\r\n\r\n<fakesub><p>Fake Sub component</p></fakesub>\r\n\r\n<div router-container=\"\"><p>Fake Sub component</p></div>";
 
         public IntegratedTest()
         {
             server = new TestServer(WebHost.CreateDefaultBuilder()
                     .UseStartup<FakeEmptyStartup>());
+
             client = server.CreateClient();
 
-            path = "wwwroot/index.html";
+            host = server.Host;
         }
 
         [Fact]

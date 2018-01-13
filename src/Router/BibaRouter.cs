@@ -67,10 +67,15 @@ namespace BibaViewEngine.Router
         private async Task ExecuteRouter(RouteContext context)
         {
             context.HttpContext.Request.Path = context.HttpContext.Request.Path.Value.Replace("/c/", "/");
-
-            var routeTree = BuildRouteTree(TemplateParser.Parse(context.HttpContext.Request.Path.Value.Remove(0, 1)).Segments,
-                TemplateParser.Parse(PathString.FromUriComponent(
-                    new Uri(context.HttpContext.Request.Headers["Referer"].ToString(), UriKind.Absolute)).Value.Remove(0, 1)).Segments);
+            var actualRoute = (Route)context.RouteData.Routers[1];
+            RouteTree routeTree;
+            var bibaRoute = _routes.FirstOrDefault(x => x.Path.ToLower().Equals(actualRoute.Name));
+            if (bibaRoute != null)
+                routeTree = new RouteTree { Route = bibaRoute, RouteName = bibaRoute.Path };
+            else
+                routeTree = BuildRouteTree(TemplateParser.Parse(context.HttpContext.Request.Path.Value.Remove(0, 1)).Segments,
+                    TemplateParser.Parse(PathString.FromUriComponent(
+                        new Uri(context.HttpContext.Request.Headers["Referer"].ToString(), UriKind.Absolute)).Value.Remove(0, 1)).Segments);
 
             var completeTemplate = new RouterResult();
             try
@@ -108,9 +113,13 @@ namespace BibaViewEngine.Router
                     node.InnerHtml = _compiler.PassValues(component);
                 }
                 else
-                    node.Descendants().FirstOrDefault(
-                        x => x.Attributes.Any(a => a.Name.Equals("router-container"))
-                    ).InnerHtml = _compiler.PassValues(component);
+                {
+                    var container = node.Descendants().FirstOrDefault(x => x.Attributes.Any(a => a.Name.Equals("router-container")));
+                    if (container != null)
+                        container.InnerHtml = _compiler.PassValues(component);
+                    else
+                        throw new RouterChildContainerNotExistsException();
+                }
             }
 
             if (routeTree.NestedRoute != null)

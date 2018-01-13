@@ -95,7 +95,7 @@ namespace BibaViewEngine
             services.AddSingleton(props);
             services.AddSingleton(new RegistesteredTags(tags));
             services.AddSingleton(components);
-            services.AddSingleton(new RouterData());
+            services.AddScoped<RouterData>();
             services.AddSingleton(new CurrentRoute { Route = new BibaRoute() });
 
             services.AddTransient<BibaCompiler>();

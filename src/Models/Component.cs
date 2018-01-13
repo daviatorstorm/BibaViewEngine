@@ -11,6 +11,7 @@ namespace BibaViewEngine
 {
     public abstract class Component
     {
+        public const string EMPTY_HTML = "<!-- -->";
         private HtmlNode _htmlElement;
         private string _template;
         internal BibaCompiler _compiler;
@@ -43,6 +44,8 @@ namespace BibaViewEngine
                     if (fileLocation != null & File.Exists(fileLocation))
                         using (var stream = File.OpenText(fileLocation))
                             _template = stream.ReadToEnd();
+                    else
+                        _template = EMPTY_HTML;
                 }
 
                 return _template;
@@ -82,7 +85,7 @@ namespace BibaViewEngine
 
             OnCompileFinish?.Invoke();
 
-            return string.IsNullOrWhiteSpace(compilerResult) ? "<!-- -->" : compilerResult;
+            return string.IsNullOrWhiteSpace(compilerResult) ? EMPTY_HTML : compilerResult;
         }
     }
 }
