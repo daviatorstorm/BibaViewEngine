@@ -9,18 +9,16 @@ namespace BibaViewEngine.Extensions
 {
     public static class ComponentExtensions
     {
-        public static T CreateComponent<T>(this IServiceProvider provider, HtmlNode node = null) where T : Component
+        public static T CreateComponent<T>(this IServiceProvider provider, HtmlNode node = null, HttpContext context = null) where T : Component
         {
             var component = provider.GetRequiredService<T>();
-            var context = provider.GetRequiredService<HttpContextAccessor>().HttpContext;
 
             return (T)InitComponent(provider, component, node, context);
         }
 
-        public static Component CreateComponent(this IServiceProvider provider, Type componentType, HtmlNode node = null)
+        public static Component CreateComponent(this IServiceProvider provider, Type componentType, HtmlNode node = null, HttpContext context = null)
         {
             var component = (Component)provider.GetRequiredService(componentType);
-            var context = provider.GetRequiredService<HttpContextAccessor>().HttpContext;
 
             return InitComponent(provider, component, node, context);
         }

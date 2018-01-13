@@ -55,7 +55,7 @@ namespace BibaViewEngine.Router
 
         private async Task ExecuteStart(HttpContext context)
         {
-            var component = _provider.CreateComponent<Component>();
+            var component = _provider.CreateComponent<Component>(context: context);
 
             await context.Response.WriteAsync(JsonConvert.SerializeObject(new
             {
@@ -89,7 +89,7 @@ namespace BibaViewEngine.Router
 
         private async Task<RouterResult> CompileRoutes(RouteTree routeTree, RouteContext context, HtmlNode node = null, Component parent = null)
         {
-            var component = _provider.CreateComponent(routeTree.Route.Component);
+            var component = _provider.CreateComponent(routeTree.Route.Component, context: context.HttpContext);
             var _authorizationService = context.HttpContext.RequestServices.GetRequiredService<IAuthorizationService>();
 
             if (routeTree.Route.Handler != null)

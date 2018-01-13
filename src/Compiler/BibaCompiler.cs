@@ -2,6 +2,7 @@ using BibaViewEngine.Attributes;
 using BibaViewEngine.Extensions;
 using BibaViewEngine.Models;
 using HtmlAgilityPack;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,13 +31,6 @@ namespace BibaViewEngine.Compiler
             _types = types;
         }
 
-        public string StartCompile(string html)
-        {
-            _doc.LoadHtml(html);
-
-            return ExecuteCompiler(_doc.DocumentNode);
-        }
-
         public IList<HtmlNode> ExtractComponents(HtmlNode node)
         {
             var excractedNodes = new List<HtmlNode>();
@@ -54,18 +48,18 @@ namespace BibaViewEngine.Compiler
             var extracted = ExtractComponents(node);
             foreach (var element in extracted)
             {
-                var component = FindComponent(element);
+                var component = FindComponent(element, parent?.HttpContext);
                 element.InnerHtml = PassValues(component, parent: parent);
             }
 
             return node.InnerHtml;
         }
 
-        public Component FindComponent(HtmlNode node)
+        public Component FindComponent(HtmlNode node, HttpContext context)
         {
             var component = _types.Single(x => x.Name.ToLower() == $"{node.Name.ToLower()}component");
 
-            var instance = _provider.CreateComponent(component, node);
+            var instance = _provider.CreateComponent(component, node, context);
 
             return instance;
         }

@@ -9,14 +9,14 @@ using Xunit;
 
 namespace test
 {
-    public class BibaMiddlewareIntegratedTest
+    public partial class IntegratedTest
     {
         TestServer server;
         HttpClient client;
         string path;
-        string template = "<html><head><base href=\"/\"><script src=\"biba.min.js\"></script></head><body></body></html>\r\n";
+        string template = "<html><head><base href=\"/\"><script src=\"biba.min.js\"></script></head><body></body></html>";
 
-        public BibaMiddlewareIntegratedTest()
+        public IntegratedTest()
         {
             server = new TestServer(WebHost.CreateDefaultBuilder()
                     .UseStartup<FakeEmptyStartup>());
@@ -32,7 +32,7 @@ namespace test
             Directory.CreateDirectory("wwwroot");
             using (var file = new StreamWriter(File.Create(path)))
             {
-                file.WriteLine("<html><body></body></html>");
+                file.Write("<html><body></body></html>");
             }
 
             // Act
@@ -44,7 +44,6 @@ namespace test
             // Assert
             Assert.Equal(template, responseString);
 
-            File.Delete(path);
             Directory.Delete("wwwroot", true);
         }
 

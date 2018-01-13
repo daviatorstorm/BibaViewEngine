@@ -1,3 +1,4 @@
+using BibaViewEngine.Auth;
 using BibaViewEngine.Compiler;
 using BibaViewEngine.Interfaces;
 using BibaViewEngine.Middleware;
@@ -14,7 +15,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using BibaViewEngine.Auth;
 
 namespace BibaViewEngine
 {
@@ -57,12 +57,12 @@ namespace BibaViewEngine
                 if (startsWithC && _routes.Count == 0)
                 {
                     context.Response.StatusCode = 204;
-                    context.Response.WriteAsync("No routes");
+                    context.Response.WriteAsync(Constants.Constants.NO_ROUTES);
                 }
                 else if (startsWithC)
                 {
                     context.Response.StatusCode = 404;
-                    context.Response.WriteAsync("Unknown route");
+                    context.Response.WriteAsync(Constants.Constants.UNKNOWN_ROUTE);
                 }
                 return next();
             });
@@ -82,7 +82,7 @@ namespace BibaViewEngine
             propsAct?.Invoke(props);
 
             var components = new ComponentTypes(Assembly.Load("BibaViewEngine").GetTypes().Where(x => x.BaseType == typeof(Component))
-                .Concat(Assembly.GetEntryAssembly().GetTypes().Where(x => x.BaseType == typeof(Component))));
+                .Concat(Assembly.GetCallingAssembly().GetTypes().Where(x => x.BaseType == typeof(Component))));
 
             InitRoutes(out Routes outRoutes, routes);
 
@@ -93,7 +93,6 @@ namespace BibaViewEngine
 
             services.AddSingleton(outRoutes);
             services.AddSingleton(props);
-            services.AddSingleton<BibaViewEngineProperties>();
             services.AddSingleton(new RegistesteredTags(tags));
             services.AddSingleton(components);
             services.AddSingleton(new RouterData());
