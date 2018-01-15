@@ -22,16 +22,22 @@ repository with step-by-step with wiki docs and explenations
 ## Plans for first release
 
 * [x] Add tutorial repository
-* [ ] Add Razor syntax and compilation support
-* [ ] Client side on router-path click active class change
-* [ ] Client side DI implementation
-* [ ] Backend and Client side tests
-* [ ] More registered components
-  * [ ] If/if-else/else
-* [ ] Glboal state support or cross controller data object
-* [ ] Biba Client Side deploy to https://www.npmjs.com/
+* [ ] Write unit and integration tests #7
+* [ ] Add Razor syntax and compilation support #8
+* [ ] Client side on router-path click active class change #9
+* [ ] Client side DI implementation #10
+* [ ] More registered components #12
+  * [ ] If/if-else/else #11
+* [ ] Glboal state support or cross controller data object #13
+* [ ] Biba Client Side deploy to https://www.npmjs.com/ #14
+* [ ] Configure travis builds #15
 
 ## Docs
 
 Detalized documentation on
 [Wiki docs](https://github.com/daviatorstorm/BibaViewEngine/wiki)
+
+## Contribution
+
+Any contribution is welcome. If you want ot become a part of project you can contact me by email
+rayan.de.bum@gmail.com
