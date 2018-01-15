@@ -16,7 +16,8 @@ namespace test.FaceMiscs
                 new BibaRoute { Path = "complex", Component = typeof(FakeComplexComponent) },
                 new BibaRoute { Path = "param/{id}", Component = typeof(FakeParamComponent) },
                 new BibaRoute { Path = "child", Component = typeof(FakeComplexComponent), Children = new Routes {
-                        new BibaRoute { Path = "sub", Component = typeof(FakeSubComponent) }
+                        new BibaRoute { Path = "sub", Component = typeof(FakeSubComponent) },
+                        new BibaRoute { Path = "sub2", Component = typeof(FakeSub2Component) }
                     }
                 },
                 new BibaRoute { Path = "bad-child", Component = typeof(FakeBadComplexComponent), Children = new Routes {

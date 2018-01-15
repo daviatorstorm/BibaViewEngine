@@ -84,6 +84,7 @@ namespace test
         [Fact]
         public void RootComponentNoContainer_Failed()
         {
+            // Act and assert
             Assert.ThrowsAsync<RouterChildContainerNotExistsException>(async () =>
             {
                 await server.CreateRequest($"c/bad-child/sub")
@@ -95,6 +96,7 @@ namespace test
         [Fact]
         public async void FromRootToSubRoute_Success()
         {
+            // Act
             var response = await server.CreateRequest($"c/child/sub")
                 .AddHeader("Referer", server.BaseAddress.AbsoluteUri)
                 .GetAsync();
@@ -104,6 +106,21 @@ namespace test
 
             // Assert
             Assert.Equal(rootToSubTemplate, result);
+        }
+
+        [Fact]
+        public async void FromSubToSubroute_Success()
+        {
+            // Act
+            var response = await server.CreateRequest($"c/child/sub2")
+                .AddHeader("Referer", server.BaseAddress.AbsoluteUri + "child/sub")
+                .GetAsync();
+            response.EnsureSuccessStatusCode();
+
+            var result = await GetRouterResult(response);
+
+            // Assert
+            Assert.Equal(fromSub2SubTemplate, result.Html);
         }
 
         private async Task<RouterResult> GetRouterResult(HttpResponseMessage response) =>

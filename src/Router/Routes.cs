@@ -30,6 +30,6 @@ namespace BibaViewEngine.Router
     public static class RoutesExtensions
     {
         public static BibaRoute FindRoute(this Routes source, string routePath) =>
-            source.First(x => x.Path.Equals(routePath, StringComparison.CurrentCultureIgnoreCase));
+            source.FirstOrDefault(x => x.Path.Equals(routePath, StringComparison.CurrentCultureIgnoreCase));
     }
 }

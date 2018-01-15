@@ -11,10 +11,10 @@ using Microsoft.AspNetCore.Routing.Template;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 
 namespace BibaViewEngine.Router
 {
@@ -143,9 +143,6 @@ namespace BibaViewEngine.Router
 
         private RouteTree BuildRouteTree(IList<TemplateSegment> toSegments, IList<TemplateSegment> fromSegments, RouteTree route = null, Routes routes = null)
         {
-            if (fromSegments.Count >= toSegments.Count)
-                fromSegments.Clear();
-
             if (routes == null)
                 routes = _routes;
 
@@ -170,19 +167,21 @@ namespace BibaViewEngine.Router
             else
                 fromSegments.Clear();
 
-            try
+            route.RouteName = toSegments.First().Parts.First().Text;
+            route.Route = routes.FindRoute(route.RouteName);
+            if (route.Route == null)
             {
-                route.RouteName = toSegments.First().Parts.First().Text;
+                route.RouteName = string.Join("/", toSegments.Select(x => x.Parts[0].Text));
                 route.Route = routes.FindRoute(route.RouteName);
 
-                toSegments.RemoveAt(0);
-                if (fromSegments.Count > 0)
-                    fromSegments.RemoveAt(0);
+                if (route.Route == null)
+                    throw new RouteNotExistsException(route.RouteName);
             }
-            catch
-            {
-                throw new RouteNotExistsException(route.RouteName);
-            }
+
+
+            toSegments.RemoveAt(0);
+            if (fromSegments.Count > 0)
+                fromSegments.RemoveAt(0);
 
             if (toSegments.Count > 0)
             {
